@@ -1,8 +1,11 @@
 ﻿
+using System;
+using System.Diagnostics;
+using System.Drawing;
 using BitMiracle.LibTiff.Classic;
 
+using BitMiracle.LibTiff.Classic;
 using System;
-using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 
@@ -11,7 +14,7 @@ class TiffTileReader
     static void Main(string[] args)
     {
         string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
-        string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpExtent";
+        string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump";
 
         using (Tiff image = Tiff.Open(filePath, "r"))
         {
@@ -40,24 +43,16 @@ class TiffTileReader
             int tilesAcross = (imageWidth + tileWidth - 1) / tileWidth;
             int tilesDown = (imageHeight + tileHeight - 1) / tileHeight;
 
-            //// Assuming pixel size in X and Y directions
-            //FieldValue[] pixelScaleField = image.GetField(TiffTag.GEOTIFF_MODELPIXELSCALETAG);
-            //if (pixelScaleField != null)
-            //{
-            //    double[] pixelScale = pixelScaleField[1].ToDoubleArray();
-            //    double pixelWidth = pixelScale[0];
-            //    double pixelHeight = pixelScale[1];
+            // Assuming pixel size in X and Y directions
+            FieldValue[] pixelScaleField = image.GetField(TiffTag.GEOTIFF_MODELPIXELSCALETAG);
+            if (pixelScaleField != null)
+            {
+                double[] pixelScale = pixelScaleField[1].ToDoubleArray();
+                double pixelWidth = pixelScale[0];
+                double pixelHeight = pixelScale[1];
 
-            //    Console.WriteLine($"Pixel Size (Width x Height): {pixelWidth} x {pixelHeight} units");
-            //}
-
-            // Get tie points (georeferencing information)
-            FieldValue[] tiePointsField = image.GetField(TiffTag.GEOTIFF_MODELTIEPOINTTAG);
-            double[] tiePoints = tiePointsField[1].ToDoubleArray();
-            double originX = tiePoints[3]; // Geographic X coordinate of the top-left pixel
-            double originY = tiePoints[4]; // Geographic Y coordinate of the top-left pixel
-
-
+                Console.WriteLine($"Pixel Size (Width x Height): {pixelWidth} x {pixelHeight} units");
+            }
 
             double pixelSizeX = 1.0; // You should read the actual pixel size from GeoTIFF tags
             double pixelSizeY = 1.0;
@@ -119,31 +114,31 @@ class TiffTileReader
                 }
             }
             // Allocate a buffer for one tile
-            //int tileSize = image.TileSize();
-            //byte[] buffer = new byte[tileSize];
+            int tileSize = image.TileSize();
+            byte[] buffer = new byte[tileSize];
 
-            //// Iterate over all tiles
-            //for (int row = 0; row < tilesDown; row++)
-            //{
-            //    for (int col = 0; col < tilesAcross; col++)
-            //    {
-            //        //int tileIndex = image.ComputeTile(col * tileWidth, row * tileHeight, 0, 0);
+            // Iterate over all tiles
+            for (int row = 0; row < tilesDown; row++)
+            {
+                for (int col = 0; col < tilesAcross; col++)
+                {
+                    //int tileIndex = image.ComputeTile(col * tileWidth, row * tileHeight, 0, 0);
 
-            //        //// Read the tile into the buffer
-            //        //image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
+                    //// Read the tile into the buffer
+                    //image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
 
-            //        //// Process the tile buffer as needed
-            //        //ProcessTile(buffer, tileWidth, tileHeight);
+                    //// Process the tile buffer as needed
+                    //ProcessTile(buffer, tileWidth, tileHeight);
 
-            //        int tileIndex = image.ComputeTile(col * tileWidth, row * tileHeight, 0, 0);
+                    int tileIndex = image.ComputeTile(col * tileWidth, row * tileHeight, 0, 0);
 
-            //        // Read the tile into the buffer
-            //        image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
+                    // Read the tile into the buffer
+                    image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
 
-            //        // Convert buffer to a JPEG image and save
-            //        SaveTileAsJpeg(buffer, tileWidth, tileHeight, col, row, outputFolder);
-            //    }
-            //}
+                    // Convert buffer to a JPEG image and save
+                    SaveTileAsJpeg(buffer, tileWidth, tileHeight, col, row, outputFolder);
+                }
+            }
         }
     }
     static void SaveTileAsJpeg(byte[] buffer, int tileWidth, int tileHeight, int col, int row, string outputFolder)
