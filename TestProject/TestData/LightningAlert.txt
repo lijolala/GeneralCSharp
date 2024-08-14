@@ -1,0 +1,250 @@
+{
+  "alerts": [
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-21T10:15:45",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31506,
+      "pointLat": 41.12219,
+      "pointLon": -96.13802,
+      "pointName": "FB DC - PNB"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-22T08:39:19",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31507,
+      "pointLat": 40.06724,
+      "pointLon": -82.7525,
+      "pointName": "FB DC - NAO"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-22T07:32:14",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31508,
+      "pointLat": 37.49677,
+      "pointLon": -77.25578,
+      "pointName": "FB DC - RVA"
+    },
+    {
+      "pointId": 31509,
+      "pointLat": 53.41432,
+      "pointLon": -6.44115,
+      "pointName": "FB DC - CLN"
+    },
+    {
+      "pointId": 31510,
+      "pointLat": 55.3717,
+      "pointLon": 10.49357,
+      "pointName": "FB DC - ODN"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-22T08:45:25",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31511,
+      "pointLat": 34.82813,
+      "pointLon": -106.78548,
+      "pointName": "FB DC - VLL"
+    },
+    {
+      "pointId": 31518,
+      "pointLat": 32.98307,
+      "pointLon": -97.25883,
+      "pointName": "FB - FTW0001"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-21T20:00:14",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31524,
+      "pointLat": 33.60567,
+      "pointLon": -83.70218,
+      "pointName": "FB DC - NCG"
+    },
+    {
+      "pointId": 31532,
+      "pointLat": 65.61668,
+      "pointLon": 22.11623,
+      "pointName": "FB - LUL0007"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-22T07:14:40",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31552,
+      "pointLat": 1.32785,
+      "pointLon": 103.74606,
+      "pointName": "FB - SIN0029"
+    },
+    {
+      "pointId": 31564,
+      "pointLat": 37.37639,
+      "pointLon": -121.94861,
+      "pointName": "FB COLO - SNC3011"
+    },
+    {
+      "alert": {
+        "status": "alert",
+        "strikeTime": "2020-07-22T18:18:06",
+        "strikeLat": 39.057300567626953,
+        "strikeLon": -77.52020263671875,
+        "sendTime": "2020-07-22T18:19:01",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31565,
+      "pointLat": 39.01803,
+      "pointLon": -77.46251,
+      "pointName": "FB - ASH4480"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-22T03:37:38",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31569,
+      "pointLat": 41.66447,
+      "pointLon": -93.5148,
+      "pointName": "FB - ATN0001"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-21T23:36:55",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 31577,
+      "pointLat": 35.31429,
+      "pointLon": -81.82192,
+      "pointName": "FB - FRC0284"
+    },
+    {
+      "pointId": 31579,
+      "pointLat": 44.29401,
+      "pointLon": -120.88338,
+      "pointName": "FB - PRN0002"
+    },
+    {
+      "pointId": 35084,
+      "pointLat": 40.28492,
+      "pointLon": -112.01538,
+      "pointName": "FB DC - EAG"
+    },
+    {
+      "alert": {
+        "status": "alert",
+        "strikeTime": "2020-07-22T17:14:28",
+        "strikeLat": 34.789398193359375,
+        "strikeLon": -86.706802368164063,
+        "sendTime": "2020-07-22T17:15:10",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 46527,
+      "pointLat": 34.83821,
+      "pointLon": -86.6349,
+      "pointName": "FB DC - NHA"
+    },
+    {
+      "pointId": 46528,
+      "pointLat": 32.98515,
+      "pointLon": -97.25518,
+      "pointName": "FB - FTW0003"
+    },
+    {
+      "pointId": 46529,
+      "pointLat": 32.98448,
+      "pointLon": -97.25994,
+      "pointName": "FB - FTW0002"
+    },
+    {
+      "alert": {
+        "status": "alert",
+        "strikeTime": "2020-07-22T18:18:06",
+        "strikeLat": 39.057300567626953,
+        "strikeLon": -77.52020263671875,
+        "sendTime": "2020-07-22T18:19:01",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 46530,
+      "pointLat": 39.02109,
+      "pointLon": -77.46359,
+      "pointName": "FB - ASH0005"
+    },
+    {
+      "alert": {
+        "status": "alert",
+        "strikeTime": "2020-07-22T18:18:06",
+        "strikeLat": 39.057300567626953,
+        "strikeLon": -77.52020263671875,
+        "sendTime": "2020-07-22T18:19:01",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 46531,
+      "pointLat": 39.02015,
+      "pointLon": -77.46303,
+      "pointName": "FB - ASH4452"
+    },
+    {
+      "alert": {
+        "status": "alert",
+        "strikeTime": "2020-07-22T18:18:06",
+        "strikeLat": 39.057300567626953,
+        "strikeLon": -77.52020263671875,
+        "sendTime": "2020-07-22T18:19:01",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 46532,
+      "pointLat": 39.0028,
+      "pointLon": -77.48189,
+      "pointName": "FB - ASH0004"
+    },
+    {
+      "pointId": 46533,
+      "pointLat": 44.29608,
+      "pointLon": -120.88282,
+      "pointName": "FB - PRN0004"
+    },
+    {
+      "pointId": 46534,
+      "pointLat": 44.29537,
+      "pointLon": -120.88703,
+      "pointName": "FB - PRN0001"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-21T23:36:55",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 46535,
+      "pointLat": 35.31705,
+      "pointLon": -81.8247,
+      "pointName": "FB - FRC0002"
+    },
+    {
+      "alert": {
+        "status": "clear",
+        "sendTime": "2020-07-21T23:36:55",
+        "perimeterRadiusKm": 16
+      },
+      "pointId": 46536,
+      "pointLat": 35.31561,
+      "pointLon": -81.82203,
+      "pointName": "FB - FRC0316"
+    }
+  ]
+}

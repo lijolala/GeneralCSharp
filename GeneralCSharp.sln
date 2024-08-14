@@ -1,0 +1,61 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30406.217
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{0EC857C7-4949-4790-A887-D90EF1A0EC26}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp2", "ConsoleApp2\ConsoleApp2.csproj", "{0D16F032-53EB-47D3-A921-0A2059C6C7A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestCode", "TestCode\TestCode.csproj", "{2A135865-8487-4EC8-8620-ABF168BA7E61}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject", "TestProject\TestProject.csproj", "{7F2B8650-4252-4827-836F-EBF68B316226}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Diagnostics", "Diagnostics\Diagnostics.csproj", "{4FC5C05B-8E8C-41CA-99FE-F103182F254F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoStuff", "GeoStuff\GeoStuff.csproj", "{87FF837A-83F5-4486-9F45-26D34AEB46B4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeotiffAPI", "GeotiffAPI\GeotiffAPI.csproj", "{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0EC857C7-4949-4790-A887-D90EF1A0EC26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0EC857C7-4949-4790-A887-D90EF1A0EC26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0EC857C7-4949-4790-A887-D90EF1A0EC26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0EC857C7-4949-4790-A887-D90EF1A0EC26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D16F032-53EB-47D3-A921-0A2059C6C7A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D16F032-53EB-47D3-A921-0A2059C6C7A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D16F032-53EB-47D3-A921-0A2059C6C7A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D16F032-53EB-47D3-A921-0A2059C6C7A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A135865-8487-4EC8-8620-ABF168BA7E61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A135865-8487-4EC8-8620-ABF168BA7E61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A135865-8487-4EC8-8620-ABF168BA7E61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A135865-8487-4EC8-8620-ABF168BA7E61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F2B8650-4252-4827-836F-EBF68B316226}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F2B8650-4252-4827-836F-EBF68B316226}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F2B8650-4252-4827-836F-EBF68B316226}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F2B8650-4252-4827-836F-EBF68B316226}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4FC5C05B-8E8C-41CA-99FE-F103182F254F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4FC5C05B-8E8C-41CA-99FE-F103182F254F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4FC5C05B-8E8C-41CA-99FE-F103182F254F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4FC5C05B-8E8C-41CA-99FE-F103182F254F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{87FF837A-83F5-4486-9F45-26D34AEB46B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87FF837A-83F5-4486-9F45-26D34AEB46B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87FF837A-83F5-4486-9F45-26D34AEB46B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87FF837A-83F5-4486-9F45-26D34AEB46B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F443CC41-02AF-45B5-9493-0958F3D63876}
+	EndGlobalSection
+EndGlobal
