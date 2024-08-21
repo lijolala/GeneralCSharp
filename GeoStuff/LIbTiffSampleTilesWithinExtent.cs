@@ -1,11 +1,8 @@
 ﻿
-using System;
-using System.Diagnostics;
-using System.Drawing;
 using BitMiracle.LibTiff.Classic;
 
-using BitMiracle.LibTiff.Classic;
 using System;
+using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 
@@ -14,8 +11,12 @@ class TiffTileReader
     static void Main(string[] args)
     {
         string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
-        string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump";
+        string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpExtent";
 
+        double minX = -0.489; // Example map extent
+        double minY = 80.28;
+        double maxX = 0.236;
+        double maxY = 101.686;
         using (Tiff image = Tiff.Open(filePath, "r"))
         {
             if (image == null)
@@ -45,98 +46,46 @@ class TiffTileReader
 
             // Assuming pixel size in X and Y directions
             FieldValue[] pixelScaleField = image.GetField(TiffTag.GEOTIFF_MODELPIXELSCALETAG);
-            if (pixelScaleField != null)
+            double[] pixelScale = pixelScaleField[1].ToDoubleArray();
+            double pixelWidth = pixelScale[0];
+            double pixelHeight = pixelScale[1];
+
+
+            // Get tie points (georeferencing information)
+            FieldValue[] tiePointsField = image.GetField(TiffTag.GEOTIFF_MODELTIEPOINTTAG);
+            double[] tiePoints = tiePointsField[1].ToDoubleArray();
+            double originX = tiePoints[3]; // Geographic X coordinate of the top-left pixel
+            double originY = tiePoints[4]; // Geographic Y coordinate of the top-left pixel
+
+            // Calculate the pixel coordinates of the bounding box
+            int minXPixel = (int)((minX - originX) / pixelWidth);
+            int maxXPixel = (int)((maxX - originX) / pixelWidth);
+            int minYPixel = (int)((originY - maxY) / pixelHeight); // Y coordinates are flipped
+            int maxYPixel = (int)((originY - minY) / pixelHeight);
+
+            // Calculate tile indices within the bounding box
+            int minTileX = minXPixel / tileWidth;
+            int maxTileX = maxXPixel / tileWidth;
+            int minTileY = minYPixel / tileHeight;
+            int maxTileY = maxYPixel / tileHeight;
+
+            for (int tileY = minTileY; tileY <= maxTileY; tileY++)
             {
-                double[] pixelScale = pixelScaleField[1].ToDoubleArray();
-                double pixelWidth = pixelScale[0];
-                double pixelHeight = pixelScale[1];
-
-                Console.WriteLine($"Pixel Size (Width x Height): {pixelWidth} x {pixelHeight} units");
-            }
-
-            double pixelSizeX = 1.0; // You should read the actual pixel size from GeoTIFF tags
-            double pixelSizeY = 1.0;
-
-            double minX = -0.489; // Example map extent
-            double minY = 51.28;
-            double maxX = 0.236;
-            double maxY = 51.686;
-
-            // array([ 2.15209704, 48.73039383,  2.54099598, 48.98700028])
-            FieldValue[] modelPixelScaleTag = image.GetField((TiffTag)33550);
-
-            if (modelPixelScaleTag != null && modelPixelScaleTag.Length > 1)
-            {
-                // The second element (index 1) contains the array of doubles as a byte array
-                byte[] scaleValuesBytes = modelPixelScaleTag[1].GetBytes();
-
-                // Convert the byte array to a double array
-                double[] scaleValues = new double[scaleValuesBytes.Length / sizeof(double)];
-                Buffer.BlockCopy(scaleValuesBytes, 0, scaleValues, 0, scaleValuesBytes.Length);
-
-                if (scaleValues.Length >= 2)
+                for (int tileX = minTileX; tileX <= maxTileX; tileX++)
                 {
-                    pixelSizeX = scaleValues[0];
-                    pixelSizeY = scaleValues[1];
+                    int tileIndex = Math.Abs(image.ComputeTile(tileX * tileWidth, tileY * tileHeight, 0, 0));
+                    byte[] tileData = new byte[tileWidth * tileHeight * 3]; // Assuming 24-bit RGB
 
-                    Console.WriteLine($"Pixel Size in X direction: {pixelSizeX}");
-                    Console.WriteLine($"Pixel Size in Y direction: {pixelSizeY}");
-                }
-                else
-                {
-                    Console.WriteLine("The ModelPixelScaleTag does not contain enough data.");
-                }
-            }
-
-            // Calculate pixel coordinates from the map extent
-            int minPixelX = (int)((minX - 0) / pixelSizeX);
-            int maxPixelX = (int)((maxX - 0) / pixelSizeX);
-            int minPixelY = (int)((minY - 0) / pixelSizeY);
-            int maxPixelY = (int)((maxY - 0) / pixelSizeY);
-
-            // Ensure the pixel coordinates are within the image bounds
-            minPixelX = Math.Max(0, minPixelX);
-            maxPixelX = Math.Min(imageWidth - 1, maxPixelX);
-            minPixelY = Math.Max(0, minPixelY);
-            maxPixelY = Math.Min(imageHeight - 1, maxPixelY);
-
-            // Read and process the tile data
-            for (int y = minPixelY; y <= maxPixelY; y++)
-            {
-                for (int x = minPixelX; x <= maxPixelX; x++)
-                {
-                    byte[] bboxBuffer = new byte[4 * (maxPixelX - minPixelX + 1)];
-                    // image.ReadScanline(bboxBuffer, y);
-                    SaveTileAsJpeg(bboxBuffer, tileWidth, tileHeight, x, y, outputFolder);
-
-                    // Process the buffer, e.g., extract a tile
-                    // Here, you would save or display the image tile
-                }
-            }
-            // Allocate a buffer for one tile
-            int tileSize = image.TileSize();
-            byte[] buffer = new byte[tileSize];
-
-            // Iterate over all tiles
-            for (int row = 0; row < tilesDown; row++)
-            {
-                for (int col = 0; col < tilesAcross; col++)
-                {
-                    //int tileIndex = image.ComputeTile(col * tileWidth, row * tileHeight, 0, 0);
-
-                    //// Read the tile into the buffer
-                    //image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
-
-                    //// Process the tile buffer as needed
-                    //ProcessTile(buffer, tileWidth, tileHeight);
-
-                    int tileIndex = image.ComputeTile(col * tileWidth, row * tileHeight, 0, 0);
-
-                    // Read the tile into the buffer
-                    image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
-
-                    // Convert buffer to a JPEG image and save
-                    SaveTileAsJpeg(buffer, tileWidth, tileHeight, col, row, outputFolder);
+                    if (image.ReadEncodedTile(tileIndex, tileData, 0, tileData.Length) > 0)
+                    {
+                        Console.WriteLine($"Tile ({tileX}, {tileY}) extracted.");
+                        // Process or save the tileData as needed
+                        SaveTileAsJpeg(tileData, tileWidth, tileHeight, tileY, tileX, outputFolder);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Failed to read tile ({tileX}, {tileY}).");
+                    }
                 }
             }
         }
