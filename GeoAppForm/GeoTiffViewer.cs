@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 using BitMiracle.LibTiff.Classic;
@@ -45,9 +47,16 @@ public class GeoTiffViewer : Form
             }
 
             // Create a Bitmap for the scaled image
-            Bitmap scaledBitmap = new Bitmap(scaledWidth, scaledHeight, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            Bitmap scaledBitmap = new Bitmap(scaledWidth, scaledHeight, PixelFormat.Format24bppRgb);
+            BitmapData bmpData = scaledBitmap.LockBits(new Rectangle(0, 0, scaledBitmap.Width, scaledBitmap.Height),
+                                                       ImageLockMode.WriteOnly, scaledBitmap.PixelFormat);
+            int bytesPerPixel = Image.GetPixelFormatSize(scaledBitmap.PixelFormat) / 8;
 
-            // Rescale and copy the raster data to the scaled Bitmap
+            // Copy the raster data to the scaled Bitmap using LockBits
+            IntPtr ptr = bmpData.Scan0;
+            int strideScaledBitmap = bmpData.Stride;
+            byte[] scaledPixels = new byte[strideScaledBitmap * scaledHeight];
+
             for (int y = 0; y < scaledHeight; y++)
             {
                 for (int x = 0; x < scaledWidth; x++)
@@ -58,15 +67,17 @@ public class GeoTiffViewer : Form
 
                     if (offset + samplesPerPixel * bytesPerSample <= raster.Length)
                     {
-                        Color color = Color.FromArgb(
-                            samplesPerPixel > 2 ? raster[offset + 2] : raster[offset], // Blue or Red
-                            samplesPerPixel > 1 ? raster[offset + 1] : raster[offset], // Green or Gray
-                            raster[offset]); // Red or Gray
-
-                        scaledBitmap.SetPixel(x, y, color);
+                        int pixelIndex = (y * strideScaledBitmap) + (x * bytesPerPixel);
+                        scaledPixels[pixelIndex] = raster[offset + 2];    // Blue
+                        scaledPixels[pixelIndex + 1] = raster[offset + 1]; // Green
+                        scaledPixels[pixelIndex + 2] = raster[offset];     // Red
                     }
                 }
             }
+
+            // Copy the modified pixel data back to the Bitmap
+            Marshal.Copy(scaledPixels, 0, ptr, scaledPixels.Length);
+            scaledBitmap.UnlockBits(bmpData);
 
             // Set the scaled bitmap to the PictureBox
             pictureBox.Image = scaledBitmap;
