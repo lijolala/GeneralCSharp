@@ -54,14 +54,17 @@ public class GeoTiffViewer : Form
                 {
                     int origX = Math.Min((int)(x / scale), originalWidth - 1);
                     int origY = Math.Min((int)(y / scale), originalHeight - 1);
-                    int offset = origY * stride + origX * samplesPerPixel * bytesPerSample;
+                    int offset = (origY * stride) + (origX * samplesPerPixel * bytesPerSample);
 
-                    Color color = Color.FromArgb(
-                        samplesPerPixel > 2 ? raster[offset + 2] : raster[offset], // Blue or Red
-                        samplesPerPixel > 1 ? raster[offset + 1] : raster[offset], // Green or Gray
-                        raster[offset]); // Red or Gray
+                    if (offset + samplesPerPixel * bytesPerSample <= raster.Length)
+                    {
+                        Color color = Color.FromArgb(
+                            samplesPerPixel > 2 ? raster[offset + 2] : raster[offset], // Blue or Red
+                            samplesPerPixel > 1 ? raster[offset + 1] : raster[offset], // Green or Gray
+                            raster[offset]); // Red or Gray
 
-                    scaledBitmap.SetPixel(x, y, color);
+                        scaledBitmap.SetPixel(x, y, color);
+                    }
                 }
             }
 
