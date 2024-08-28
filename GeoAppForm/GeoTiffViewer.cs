@@ -21,7 +21,7 @@ public class GeoTiffViewer : Form
         this.Controls.Add(pictureBox);
 
         // Load and display the GeoTIFF with scaling
-        LoadGeoTiff(@"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif", 0.1); // Scale to 10% of original size
+        LoadGeoTiff(@"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\la.tif", 0.1); // Scale to 10% of original size
     }
 
     private void LoadGeoTiff(string filePath, double scale)
