@@ -88,8 +88,8 @@ class Program
             Bitmap originalBitmap = ConvertToBitmap(raster, (int)(tileWidth ), (int)(tileHeight ), GetBytesPerSample(image));
 
             // Save the resized bitmap
-            string outputFilePath = Path.Combine(outputFolder, $"tile_{tileX}_{tileY}.png");
-            originalBitmap.Save(outputFilePath, ImageFormat.Png);
+            string outputFilePath = Path.Combine(outputFolder, $"tile_{tileX}_{tileY}.jpg");
+            originalBitmap.Save(outputFilePath, ImageFormat.Jpeg);
 
             Console.WriteLine($"Tile saved to {outputFilePath}.");
         }
@@ -108,73 +108,15 @@ class Program
 
     static Bitmap ConvertToBitmap(byte[] raster, int width, int height, int bytesPerSample)
     {
-        PixelFormat pixelFormat;
-        if (bytesPerSample == 1)
-        {
-            pixelFormat = PixelFormat.Format8bppIndexed; // 8-bit grayscale
-        }
-        else if (bytesPerSample == 3)
-        {
-            pixelFormat = PixelFormat.Format24bppRgb; // 24-bit RGB
-        }
-        else if (bytesPerSample == 4)
-        {
-            pixelFormat = PixelFormat.Format32bppArgb; // 32-bit ARGB
-        }
-        else
-        {
-            throw new NotSupportedException("Unsupported bytes per sample: " + bytesPerSample);
-        }
+        string base64String = Convert.ToBase64String(raster);
+        Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
+            bitmap.PixelFormat);
 
-        Bitmap bitmap = new Bitmap(width, height, pixelFormat);
+        // Copy the buffer data into the bitmap's pixel buffer
+        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, raster.Length);
 
-        if (pixelFormat == PixelFormat.Format8bppIndexed)
-        {
-            ColorPalette palette = bitmap.Palette;
-            for (int i = 0; i < 256; i++)
-            {
-                palette.Entries[i] = Color.FromArgb(i, i, i);
-            }
-            bitmap.Palette = palette;
-        }
-
-        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, bitmap.Width, bitmap.Height), ImageLockMode.WriteOnly, bitmap.PixelFormat);
-        IntPtr ptr = bmpData.Scan0;
-
-        int stride = bmpData.Stride;
-        byte[] pixelData = new byte[stride * bitmap.Height];
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                int rasterIndex = (y * width + x) * bytesPerSample;
-                int bitmapIndex = (y * stride) + (x * bytesPerSample);
-
-                if (bytesPerSample == 1) // Grayscale
-                {
-                    byte value = raster[rasterIndex];
-                    pixelData[bitmapIndex] = value;
-                }
-                else if (bytesPerSample == 3) // RGB
-                {
-                    pixelData[bitmapIndex + 2] = raster[rasterIndex + 0]; // R
-                    pixelData[bitmapIndex + 1] = raster[rasterIndex + 1]; // G
-                    pixelData[bitmapIndex + 0] = raster[rasterIndex + 2]; // B
-                }
-                else if (bytesPerSample == 4) // ARGB
-                {
-                    pixelData[bitmapIndex + 3] = raster[rasterIndex + 3]; // A
-                    pixelData[bitmapIndex + 2] = raster[rasterIndex + 2]; // R
-                    pixelData[bitmapIndex + 1] = raster[rasterIndex + 1]; // G
-                    pixelData[bitmapIndex + 0] = raster[rasterIndex + 0]; // B
-                }
-            }
-        }
-
-        System.Runtime.InteropServices.Marshal.Copy(pixelData, 0, ptr, pixelData.Length);
         bitmap.UnlockBits(bmpData);
-
         return bitmap;
     }
 
