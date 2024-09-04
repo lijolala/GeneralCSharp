@@ -48,8 +48,8 @@ class GeoTiffTileExtractor
             maxPixelY = Math.Min(height - 1, maxPixelY);
 
             // Create a Bitmap to store the extracted tiles
-            int outputWidth = maxPixelX - minPixelX + 1;
-            int outputHeight = maxPixelY - minPixelY + 1;
+            int outputWidth = Math.Abs(maxPixelX - minPixelX + 1);
+            int outputHeight = Math.Abs(maxPixelY - minPixelY + 1);
             using (Bitmap outputImage = new Bitmap(outputWidth, outputHeight , PixelFormat.Format24bppRgb))
             {
                 for (int y = minPixelY; y <= maxPixelY; y += tileHeight)

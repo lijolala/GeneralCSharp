@@ -68,7 +68,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GetTiffFromURLStrip.cs" />
+    <Compile Include="GeoTiffTileUsingQuadKey.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
