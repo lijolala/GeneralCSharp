@@ -43,7 +43,6 @@ class Program
             switch (digit)
             {
                 case '0':
-                    // No change
                     break;
                 case '1':
                     tileX |= mask;
@@ -74,6 +73,7 @@ class Program
             int tileWidth = image.GetField(TiffTag.TILEWIDTH)[0].ToInt();
             int tileHeight = image.GetField(TiffTag.TILELENGTH)[0].ToInt();
             int samplesPerPixel = image.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
+            int bitsPerSample = image.GetField(TiffTag.BITSPERSAMPLE)[0].ToInt();
             int bytesPerSample = GetBytesPerSample(image);
             int bytesPerPixel = bytesPerSample * samplesPerPixel;
 
@@ -94,7 +94,7 @@ class Program
             }
 
             // Convert the byte array to a bitmap
-            Bitmap bitmap = ConvertToBitmap(raster, tileWidth, tileHeight, image);
+            Bitmap bitmap = ConvertToBitmap(raster, tileWidth, tileHeight, samplesPerPixel, bitsPerSample);
 
             // Save the bitmap as JPEG
             string outputFilePath = Path.Combine(outputFolder, $"tile_{tileX}_{tileY}.jpg");
@@ -115,18 +115,14 @@ class Program
         return (bits + 7) / 8; // Convert bits to bytes
     }
 
-    static Bitmap ConvertToBitmap(byte[] raster, int width, int height, Tiff image)
+    static Bitmap ConvertToBitmap(byte[] raster, int width, int height, int samplesPerPixel, int bitsPerSample)
     {
-        int samplesPerPixel = image.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
-        int bytesPerSample = GetBytesPerSample(image);
-        int bytesPerPixel = bytesPerSample * samplesPerPixel;
+        int bytesPerPixel = (bitsPerSample * samplesPerPixel + 7) / 8;
 
-        // Determine pixel format based on the samples per pixel and bits per sample
         PixelFormat pixelFormat = PixelFormat.Undefined;
-
         if (samplesPerPixel == 1)
         {
-            pixelFormat = bytesPerSample == 1 ? PixelFormat.Format8bppIndexed : PixelFormat.Format1bppIndexed;
+            pixelFormat = PixelFormat.Format8bppIndexed;
         }
         else if (samplesPerPixel == 3)
         {
@@ -136,34 +132,26 @@ class Program
         {
             pixelFormat = PixelFormat.Format32bppArgb;
         }
-        else
-        {
-            throw new InvalidOperationException("Unsupported combination of samples per pixel and bits per sample.");
-        }
 
         Bitmap bitmap = new Bitmap(width, height, pixelFormat);
         BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, pixelFormat);
 
-        // Calculate the stride
-        int stride = bmpData.Stride;
-        int expectedSize = stride * height;
-
-        // Ensure the raster length matches the expected size
+        // Ensure the raster length matches the bitmap data size
         if (raster.Length != width * height * bytesPerPixel)
         {
             throw new InvalidOperationException("Raster length does not match expected bitmap data size.");
         }
 
         // Copy the buffer data into the bitmap's pixel buffer
-        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, expectedSize);
+        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, raster.Length);
 
         bitmap.UnlockBits(bmpData);
 
-        // If 8bpp, set grayscale palette
+        // Set grayscale palette for 8bpp
         if (pixelFormat == PixelFormat.Format8bppIndexed)
         {
             ColorPalette palette = bitmap.Palette;
-            for (int i = 0; i < palette.Entries.Length; i++)
+            for (int i = 0; i < 256; i++)
             {
                 palette.Entries[i] = Color.FromArgb(i, i, i);
             }
