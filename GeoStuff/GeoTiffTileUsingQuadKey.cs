@@ -10,7 +10,7 @@ class Program
     static void Main(string[] args)
     {
         string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
-        string quadkey = "023111"; // Replace with your quadkey
+        string quadkey = "2111"; // Replace with your quadkey
         string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1"; // Replace with your output folder path
 
         var result = DecodeQuadkey(quadkey);
@@ -46,10 +46,10 @@ class Program
             bitmap.UnlockBits(bmpData);
 
             // Construct the file name including elevation
-            string fileName = Path.Combine(outputFolder, $"tile_{row}_{col}_elev_{elevation:F2}.jpeg");
+            string fileName = Path.Combine(outputFolder, $"tile_{row}_{col}_elev_{elevation:F2}.png");
 
             // Save the bitmap as a JPEG file
-            bitmap.Save(fileName, ImageFormat.Jpeg);
+            bitmap.Save(fileName, ImageFormat.Png);
         }
     }
 
