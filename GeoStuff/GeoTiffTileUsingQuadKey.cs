@@ -93,8 +93,8 @@ class Program
                 throw new InvalidOperationException($"Could not read tile {tileIndex}.");
             }
 
-            // Convert the byte array to a bitmap
-            Bitmap bitmap = ConvertToBitmap(raster, tileWidth, tileHeight, samplesPerPixel, bitsPerSample);
+            // Convert the byte array to a bitmap using SetPixel
+            Bitmap bitmap = ConvertToBitmapWithSetPixel(raster, tileWidth, tileHeight, samplesPerPixel, bitsPerSample);
 
             // Save the bitmap as JPEG
             string outputFilePath = Path.Combine(outputFolder, $"tile_{tileX}_{tileY}.jpg");
@@ -115,47 +115,45 @@ class Program
         return (bits + 7) / 8; // Convert bits to bytes
     }
 
-    static Bitmap ConvertToBitmap(byte[] raster, int width, int height, int samplesPerPixel, int bitsPerSample)
+    static Bitmap ConvertToBitmapWithSetPixel(byte[] raster, int width, int height, int samplesPerPixel, int bitsPerSample)
     {
+        Bitmap bitmap = new Bitmap(width, height);
+
         int bytesPerPixel = (bitsPerSample * samplesPerPixel + 7) / 8;
-
-        PixelFormat pixelFormat = PixelFormat.Undefined;
-        if (samplesPerPixel == 1)
+        for (int y = 0; y < height; y++)
         {
-            pixelFormat = PixelFormat.Format8bppIndexed;
-        }
-        else if (samplesPerPixel == 3)
-        {
-            pixelFormat = PixelFormat.Format24bppRgb;
-        }
-        else if (samplesPerPixel == 4)
-        {
-            pixelFormat = PixelFormat.Format32bppArgb;
-        }
-
-        Bitmap bitmap = new Bitmap(width, height, pixelFormat);
-        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, pixelFormat);
-
-        // Ensure the raster length matches the bitmap data size
-        if (raster.Length != width * height * bytesPerPixel)
-        {
-            throw new InvalidOperationException("Raster length does not match expected bitmap data size.");
-        }
-
-        // Copy the buffer data into the bitmap's pixel buffer
-        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, raster.Length);
-
-        bitmap.UnlockBits(bmpData);
-
-        // Set grayscale palette for 8bpp
-        if (pixelFormat == PixelFormat.Format8bppIndexed)
-        {
-            ColorPalette palette = bitmap.Palette;
-            for (int i = 0; i < 256; i++)
+            for (int x = 0; x < width; x++)
             {
-                palette.Entries[i] = Color.FromArgb(i, i, i);
+                int pixelIndex = (y * width + x) * bytesPerPixel;
+
+                // Assuming 8-bit grayscale or 24-bit RGB
+                if (samplesPerPixel == 1)
+                {
+                    // Grayscale
+                    int intensity = raster[pixelIndex];
+                    Color color = Color.FromArgb(intensity, intensity, intensity);
+                    bitmap.SetPixel(x, y, color);
+                }
+                else if (samplesPerPixel == 3)
+                {
+                    // RGB
+                    int red = raster[pixelIndex];
+                    int green = raster[pixelIndex + 1];
+                    int blue = raster[pixelIndex + 2];
+                    Color color = Color.FromArgb(red, green, blue);
+                    bitmap.SetPixel(x, y, color);
+                }
+                else if (samplesPerPixel == 4)
+                {
+                    // RGBA
+                    int red = raster[pixelIndex];
+                    int green = raster[pixelIndex + 1];
+                    int blue = raster[pixelIndex + 2];
+                    int alpha = raster[pixelIndex + 3];
+                    Color color = Color.FromArgb(alpha, red, green, blue);
+                    bitmap.SetPixel(x, y, color);
+                }
             }
-            bitmap.Palette = palette;
         }
 
         return bitmap;
