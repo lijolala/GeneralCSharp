@@ -10,28 +10,70 @@ class Program
     static void Main(string[] args)
     {
         string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
-        string quadkey = "02310"; // Replace with your quadkey
+        string quadkey = "023111"; // Replace with your quadkey
         string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1"; // Replace with your output folder path
 
         var result = DecodeQuadkey(quadkey);
         int zoomLevel = result.Item1;
-        int tileX = result.Item2;
-        int tileY = result.Item3;
-
-        Console.WriteLine($"Zoom Level: {zoomLevel}, Tile X: {tileX}, Tile Y: {tileY}");
-
-        try
+        int row = result.Item2;
+        int col = result.Item3;
+        using (Tiff image = Tiff.Open(filePath, "r"))
         {
-            SaveTileFromGeoTiff(filePath, zoomLevel, tileX, tileY, outputFolder);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"An error occurred: {ex.Message}");
+            int tileSize = image.TileSize();
+            byte[] buffer = new byte[tileSize];
+            // Get tile width and height
+            int tileWidth = image.GetField(TiffTag.TILEWIDTH)[0].ToInt();
+            int tileHeight = image.GetField(TiffTag.TILELENGTH)[0].ToInt();
+
+            // Read the tile into the buffer
+            image.ReadTile(buffer, 0, col * tileWidth, row * tileHeight, 0, 0);
+            // Retrieve the elevation for the current tile
+            double elevation = GetElevationForTile(image, col, row, zoomLevel);
+            SaveTileAsJpeg(buffer, tileWidth, tileHeight, col, row, elevation, outputFolder);
         }
     }
 
+    static void SaveTileAsJpeg(byte[] buffer, int tileWidth, int tileHeight, int col, int row, double elevation, string outputFolder)
+    {
+        // Assuming 32-bit RGBA data in the buffer, create a Bitmap
+        using (Bitmap bitmap = new Bitmap(tileWidth, tileHeight, PixelFormat.Format32bppArgb))
+        {
+            BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, tileWidth, tileHeight), ImageLockMode.WriteOnly, bitmap.PixelFormat);
+
+            // Copy the buffer data into the bitmap's pixel buffer
+            System.Runtime.InteropServices.Marshal.Copy(buffer, 0, bmpData.Scan0, buffer.Length);
+
+            bitmap.UnlockBits(bmpData);
+
+            // Construct the file name including elevation
+            string fileName = Path.Combine(outputFolder, $"tile_{row}_{col}_elev_{elevation:F2}.jpeg");
+
+            // Save the bitmap as a JPEG file
+            bitmap.Save(fileName, ImageFormat.Jpeg);
+        }
+    }
+
+    static double GetElevationForTile(Tiff image, int col, int row, int zoomLevel)
+    {
+        // For demonstration, assuming elevation is stored in a specific band or as a tag.
+        // Adjust the logic depending on where elevation data is stored.
+
+        // Example: If elevation is in the 3rd band (Z-coordinate)
+        byte[] elevationBuffer = new byte[image.TileSize()];
+        image.ReadTile(elevationBuffer, 0, col, row, 2, 0); // Assuming band 2 (zero-indexed) for elevation
+        // Convert buffer to a meaningful elevation value. This might require specific conversion logic.
+        // For now, let's assume the first pixel gives us the elevation.
+        double elevation = BitConverter.ToSingle(elevationBuffer, 0);
+
+        return elevation;
+    }
     static Tuple<int, int, int> DecodeQuadkey(string quadkey)
     {
+        if (string.IsNullOrEmpty(quadkey))
+        {
+            throw new ArgumentException("Quadkey cannot be null or empty.");
+        }
+
         int zoomLevel = quadkey.Length;
         int tileX = 0;
         int tileY = 0;
@@ -54,110 +96,12 @@ class Program
                     tileX |= mask;
                     tileY |= mask;
                     break;
+                default:
+                    throw new ArgumentException($"Invalid quadkey digit: {digit}");
             }
         }
 
         return Tuple.Create(zoomLevel, tileX, tileY);
     }
 
-    static void SaveTileFromGeoTiff(string filePath, int zoomLevel, int tileX, int tileY, string outputFolder)
-    {
-        using (Tiff image = Tiff.Open(filePath, "r"))
-        {
-            if (image == null)
-            {
-                throw new InvalidOperationException("Could not open the GeoTIFF file.");
-            }
-
-            // Get tile dimensions
-            int tileWidth = image.GetField(TiffTag.TILEWIDTH)[0].ToInt();
-            int tileHeight = image.GetField(TiffTag.TILELENGTH)[0].ToInt();
-            int samplesPerPixel = image.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
-            int bitsPerSample = image.GetField(TiffTag.BITSPERSAMPLE)[0].ToInt();
-            int bytesPerSample = GetBytesPerSample(image);
-            int bytesPerPixel = bytesPerSample * samplesPerPixel;
-
-            // Calculate the pixel buffer size based on the image’s sample format
-            int bytesPerTile = tileWidth * tileHeight * bytesPerPixel;
-
-            // Allocate buffer for tile data
-            byte[] raster = new byte[bytesPerTile];
-
-            // Calculate the tile index
-            int numTilesX = image.GetField(TiffTag.IMAGEWIDTH)[0].ToInt() / tileWidth;
-            int tileIndex = tileY * numTilesX + tileX;
-
-            // Read the tile data
-            if (image.ReadEncodedTile(tileIndex, raster, 0, raster.Length) == -1)
-            {
-                throw new InvalidOperationException($"Could not read tile {tileIndex}.");
-            }
-
-            // Convert the byte array to a bitmap
-            Bitmap bitmap = ConvertToBitmap(raster, tileWidth, tileHeight, samplesPerPixel, bitsPerSample);
-
-            // Save the bitmap as JPEG
-            string outputFilePath = Path.Combine(outputFolder, $"tile_{tileX}_{tileY}.jpg");
-            bitmap.Save(outputFilePath, ImageFormat.Jpeg);
-
-            Console.WriteLine($"Tile saved to {outputFilePath}.");
-        }
-    }
-
-    static int GetBytesPerSample(Tiff image)
-    {
-        var bitsPerSample = image.GetField(TiffTag.BITSPERSAMPLE);
-        if (bitsPerSample == null)
-        {
-            throw new InvalidOperationException("Unable to determine bits per sample.");
-        }
-        int bits = bitsPerSample[0].ToInt();
-        return (bits + 7) / 8; // Convert bits to bytes
-    }
-
-    static Bitmap ConvertToBitmap(byte[] raster, int width, int height, int samplesPerPixel, int bitsPerSample)
-    {
-        int bytesPerPixel = (bitsPerSample * samplesPerPixel + 7) / 8;
-
-        PixelFormat pixelFormat = PixelFormat.Undefined;
-        if (samplesPerPixel == 1)
-        {
-            pixelFormat = PixelFormat.Format8bppIndexed;
-        }
-        else if (samplesPerPixel == 3)
-        {
-            pixelFormat = PixelFormat.Format24bppRgb;
-        }
-        else if (samplesPerPixel == 4)
-        {
-            pixelFormat = PixelFormat.Format32bppArgb;
-        }
-
-        Bitmap bitmap = new Bitmap(width, height, pixelFormat);
-        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, pixelFormat);
-
-        // Ensure the raster length matches the bitmap data size
-        if (raster.Length != width * height * bytesPerPixel)
-        {
-            throw new InvalidOperationException("Raster length does not match expected bitmap data size.");
-        }
-
-        // Copy the buffer data into the bitmap's pixel buffer
-        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, raster.Length);
-
-        bitmap.UnlockBits(bmpData);
-
-        // Set grayscale palette for 8bpp
-        if (pixelFormat == PixelFormat.Format8bppIndexed)
-        {
-            ColorPalette palette = bitmap.Palette;
-            for (int i = 0; i < 256; i++)
-            {
-                palette.Entries[i] = Color.FromArgb(i, i, i);
-            }
-            bitmap.Palette = palette;
-        }
-
-        return bitmap;
-    }
 }
