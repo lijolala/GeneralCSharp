@@ -9,19 +9,28 @@ class Program
 {
     static void Main(string[] args)
     {
-        string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; ; // Replace with your GeoTIFF file path
+        string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
         string quadkey = "02310"; // Replace with your quadkey
         string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1"; // Replace with your output folder path
-        float scaleFactor = 0.1f; // Scale down by 10% (0.1f)
 
-        (int zoomLevel, int tileX, int tileY) = DecodeQuadkey(quadkey);
+        var result = DecodeQuadkey(quadkey);
+        int zoomLevel = result.Item1;
+        int tileX = result.Item2;
+        int tileY = result.Item3;
 
         Console.WriteLine($"Zoom Level: {zoomLevel}, Tile X: {tileX}, Tile Y: {tileY}");
 
-        ResizeAndSaveTileFromGeoTiff(filePath, zoomLevel, tileX, tileY, outputFolder, scaleFactor);
+        try
+        {
+            SaveTileFromGeoTiff(filePath, zoomLevel, tileX, tileY, outputFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred: {ex.Message}");
+        }
     }
 
-    static (int zoomLevel, int tileX, int tileY) DecodeQuadkey(string quadkey)
+    static Tuple<int, int, int> DecodeQuadkey(string quadkey)
     {
         int zoomLevel = quadkey.Length;
         int tileX = 0;
@@ -49,25 +58,27 @@ class Program
             }
         }
 
-        return (zoomLevel, tileX, tileY);
+        return Tuple.Create(zoomLevel, tileX, tileY);
     }
 
-    static void ResizeAndSaveTileFromGeoTiff(string filePath, int zoomLevel, int tileX, int tileY, string outputFolder, float scaleFactor)
+    static void SaveTileFromGeoTiff(string filePath, int zoomLevel, int tileX, int tileY, string outputFolder)
     {
         using (Tiff image = Tiff.Open(filePath, "r"))
         {
             if (image == null)
             {
-                Console.WriteLine("Could not open the GeoTIFF file.");
-                return;
+                throw new InvalidOperationException("Could not open the GeoTIFF file.");
             }
 
             // Get tile dimensions
             int tileWidth = image.GetField(TiffTag.TILEWIDTH)[0].ToInt();
             int tileHeight = image.GetField(TiffTag.TILELENGTH)[0].ToInt();
+            int samplesPerPixel = image.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
+            int bytesPerSample = GetBytesPerSample(image);
+            int bytesPerPixel = bytesPerSample * samplesPerPixel;
 
             // Calculate the pixel buffer size based on the image’s sample format
-            int bytesPerTile = tileWidth * tileHeight * GetBytesPerSample(image);
+            int bytesPerTile = tileWidth * tileHeight * bytesPerPixel;
 
             // Allocate buffer for tile data
             byte[] raster = new byte[bytesPerTile];
@@ -77,19 +88,17 @@ class Program
             int tileIndex = tileY * numTilesX + tileX;
 
             // Read the tile data
-            if (image.ReadRawTile(tileIndex, raster, 0, raster.Length) == null)
+            if (image.ReadEncodedTile(tileIndex, raster, 0, raster.Length) == -1)
             {
-                Console.WriteLine($"Could not read tile {tileIndex}.");
-                return;
+                throw new InvalidOperationException($"Could not read tile {tileIndex}.");
             }
 
             // Convert the byte array to a bitmap
-            //Bitmap originalBitmap = ConvertToBitmap(raster, (int)(tileWidth * scaleFactor), (int)(tileHeight * scaleFactor), GetBytesPerSample(image));
-            Bitmap originalBitmap = ConvertToBitmap(raster, (int)(tileWidth ), (int)(tileHeight ), GetBytesPerSample(image));
+            Bitmap bitmap = ConvertToBitmap(raster, tileWidth, tileHeight, image);
 
-            // Save the resized bitmap
+            // Save the bitmap as JPEG
             string outputFilePath = Path.Combine(outputFolder, $"tile_{tileX}_{tileY}.jpg");
-            originalBitmap.Save(outputFilePath, ImageFormat.Jpeg);
+            bitmap.Save(outputFilePath, ImageFormat.Jpeg);
 
             Console.WriteLine($"Tile saved to {outputFilePath}.");
         }
@@ -106,35 +115,61 @@ class Program
         return (bits + 7) / 8; // Convert bits to bytes
     }
 
-    static Bitmap ConvertToBitmap(byte[] raster, int width, int height, int bytesPerSample)
+    static Bitmap ConvertToBitmap(byte[] raster, int width, int height, Tiff image)
     {
-        string base64String = Convert.ToBase64String(raster);
-        Bitmap bitmap = new Bitmap(width, height, PixelFormat.Format32bppArgb);
-        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly,
-            bitmap.PixelFormat);
+        int samplesPerPixel = image.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
+        int bytesPerSample = GetBytesPerSample(image);
+        int bytesPerPixel = bytesPerSample * samplesPerPixel;
 
-        // Copy the buffer data into the bitmap's pixel buffer
-        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, raster.Length);
+        // Determine pixel format based on the samples per pixel and bits per sample
+        PixelFormat pixelFormat = PixelFormat.Undefined;
 
-        bitmap.UnlockBits(bmpData);
-        return bitmap;
-    }
-
-
-
-    static Bitmap ResizeBitmap(Bitmap original, float scaleFactor)
-    {
-        int newWidth = (int)(original.Width * scaleFactor);
-        int newHeight = (int)(original.Height * scaleFactor);
-
-        Bitmap resized = new Bitmap(newWidth, newHeight);
-
-        using (Graphics g = Graphics.FromImage(resized))
+        if (samplesPerPixel == 1)
         {
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-            g.DrawImage(original, 0, 0, newWidth, newHeight);
+            pixelFormat = bytesPerSample == 1 ? PixelFormat.Format8bppIndexed : PixelFormat.Format1bppIndexed;
+        }
+        else if (samplesPerPixel == 3)
+        {
+            pixelFormat = PixelFormat.Format24bppRgb;
+        }
+        else if (samplesPerPixel == 4)
+        {
+            pixelFormat = PixelFormat.Format32bppArgb;
+        }
+        else
+        {
+            throw new InvalidOperationException("Unsupported combination of samples per pixel and bits per sample.");
         }
 
-        return resized;
+        Bitmap bitmap = new Bitmap(width, height, pixelFormat);
+        BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, width, height), ImageLockMode.WriteOnly, pixelFormat);
+
+        // Calculate the stride
+        int stride = bmpData.Stride;
+        int expectedSize = stride * height;
+
+        // Ensure the raster length matches the expected size
+        if (raster.Length != width * height * bytesPerPixel)
+        {
+            throw new InvalidOperationException("Raster length does not match expected bitmap data size.");
+        }
+
+        // Copy the buffer data into the bitmap's pixel buffer
+        System.Runtime.InteropServices.Marshal.Copy(raster, 0, bmpData.Scan0, expectedSize);
+
+        bitmap.UnlockBits(bmpData);
+
+        // If 8bpp, set grayscale palette
+        if (pixelFormat == PixelFormat.Format8bppIndexed)
+        {
+            ColorPalette palette = bitmap.Palette;
+            for (int i = 0; i < palette.Entries.Length; i++)
+            {
+                palette.Entries[i] = Color.FromArgb(i, i, i);
+            }
+            bitmap.Palette = palette;
+        }
+
+        return bitmap;
     }
 }
