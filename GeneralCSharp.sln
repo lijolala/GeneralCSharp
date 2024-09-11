@@ -15,8 +15,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoStuff", "GeoStuff\GeoStu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeotiffAPI", "GeotiffAPI\GeotiffAPI.csproj", "{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeoAppForm", "GeoAppForm\GeoAppForm.csproj", "{8850C158-3804-45B3-9234-53158D4B441E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,10 +45,6 @@ Global
 		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{718D0088-4FC6-4B4C-817E-F4456DEBEBF9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8850C158-3804-45B3-9234-53158D4B441E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8850C158-3804-45B3-9234-53158D4B441E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8850C158-3804-45B3-9234-53158D4B441E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8850C158-3804-45B3-9234-53158D4B441E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
