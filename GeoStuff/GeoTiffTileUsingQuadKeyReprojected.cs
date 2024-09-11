@@ -9,9 +9,11 @@ class Program
 {
     static void Main(string[] args)
     {
-        string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
+        string filePath =
+            @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
         string quadKey = "2101"; // Replace with your QuadKey
-        string outputTilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png"; // Replace with your output tile path
+        string outputTilePath =
+            @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png"; // Replace with your output tile path
 
         ExtractTileFromGeoTiff(filePath, quadKey, outputTilePath);
     }
@@ -21,14 +23,18 @@ class Program
         var (zoomLevel, tileX, tileY) = QuadKeyToTile(quadKey);
         var (minLon, minLat, maxLon, maxLat) = TileToBoundingBox(tileX, tileY, zoomLevel);
 
+        // Convert the bounding box from geographic to Web Mercator coordinates
+        (double minX, double minY) = GeoToWebMercator(minLon, minLat);
+        (double maxX, double maxY) = GeoToWebMercator(maxLon, maxLat);
+
         using (Tiff image = Tiff.Open(geoTiffPath, "r"))
         {
             double[] geoTransform = GetGeoTransform(image);
-            AdjustProjectionIfNeeded(geoTransform);
-
             int minXPixel, minYPixel, maxXPixel, maxYPixel;
-            GeoToPixel(minLon, minLat, geoTransform, out minXPixel, out minYPixel);
-            GeoToPixel(maxLon, maxLat, geoTransform, out maxXPixel, out maxYPixel);
+
+            // Convert the Web Mercator coordinates to pixel coordinates
+            WebMercatorToPixel(minX, minY, geoTransform, out minXPixel, out minYPixel);
+            WebMercatorToPixel(maxX, maxY, geoTransform, out maxXPixel, out maxYPixel);
 
             int tileWidth = image.GetField(TiffTag.TILEWIDTH)[0].ToInt();
             int tileHeight = image.GetField(TiffTag.TILELENGTH)[0].ToInt();
@@ -61,10 +67,6 @@ class Program
                 Console.WriteLine("Unexpected pixel scale array length.");
             }
         }
-        else
-        {
-            Console.WriteLine("ModelPixelScaleTag not found in the GeoTIFF.");
-        }
 
         const int ModelTiepointTag = 33922;
         double[] tiePoints = null;
@@ -78,17 +80,11 @@ class Program
             {
                 double pixelX = tiePoints[i];
                 double pixelY = tiePoints[i + 1];
-                double pixelZ = tiePoints[i + 2];
                 double geoX = tiePoints[i + 3];
                 double geoY = tiePoints[i + 4];
-                double geoZ = tiePoints[i + 5];
 
-                Console.WriteLine($"Tie Point - Pixel (X, Y, Z): ({pixelX}, {pixelY}, {pixelZ}), Geo (X, Y, Z): ({geoX}, {geoY}, {geoZ})");
+                Console.WriteLine($"Tie Point - Pixel (X, Y): ({pixelX}, {pixelY}), Geo (X, Y): ({geoX}, {geoY})");
             }
-        }
-        else
-        {
-            Console.WriteLine("ModelTiepointTag not found in the GeoTIFF.");
         }
 
         if (tiePoints == null || tiePoints.Length < 6)
@@ -122,15 +118,25 @@ class Program
         return result;
     }
 
-    public static void GeoToPixel(double lon, double lat, double[] geoTransform, out int pixelX, out int pixelY)
+    /// <summary>
+    /// Converts geographic coordinates to Web Mercator coordinates.
+    /// </summary>
+    public static (double x, double y) GeoToWebMercator(double lon, double lat)
     {
-        pixelX = (int)((lon - geoTransform[0]) / geoTransform[1]);
-        pixelY = (int)((lat - geoTransform[3]) / geoTransform[5]);
+        double earthRadius = 6378137;
+        double x = lon * (earthRadius * Math.PI / 180);
+        double y = Math.Log(Math.Tan(Math.PI / 4 + lat * Math.PI / 360)) * earthRadius;
+        return (x, y);
     }
 
-    public static void AdjustProjectionIfNeeded(double[] geoTransform)
+    /// <summary>
+    /// Converts Web Mercator coordinates to pixel coordinates using the GeoTransform.
+    /// </summary>
+    public static void WebMercatorToPixel(double mercX, double mercY, double[] geoTransform, out int pixelX,
+        out int pixelY)
     {
-        // Adjust the projection if the file is not in Web Mercator.
+        pixelX = (int)((mercX - geoTransform[0]) / geoTransform[1]);
+        pixelY = (int)((mercY - geoTransform[3]) / geoTransform[5]);
     }
 
     public static void SaveTileAsPng(byte[] buffer, int tileWidth, int tileHeight, string outputPath)
@@ -138,12 +144,11 @@ class Program
         using (Bitmap bitmap = new Bitmap(tileWidth, tileHeight, PixelFormat.Format32bppArgb))
         {
             BitmapData bmpData = bitmap.LockBits(new Rectangle(0, 0, tileWidth, tileHeight),
-                                                  ImageLockMode.WriteOnly, bitmap.PixelFormat);
+                ImageLockMode.WriteOnly, bitmap.PixelFormat);
             System.Runtime.InteropServices.Marshal.Copy(buffer, 0, bmpData.Scan0, buffer.Length);
             bitmap.UnlockBits(bmpData);
 
             SetBitmapTransparency(bitmap);
-
             bitmap.Save(outputPath, ImageFormat.Png);
         }
     }
@@ -194,7 +199,8 @@ class Program
         return (zoomLevel, tileX, tileY);
     }
 
-    public static (double minLon, double minLat, double maxLon, double maxLat) TileToBoundingBox(int tileX, int tileY, int zoomLevel)
+    public static (double minLon, double minLat, double maxLon, double maxLat) TileToBoundingBox(int tileX, int tileY,
+        int zoomLevel)
     {
         double n = Math.Pow(2.0, zoomLevel);
 
