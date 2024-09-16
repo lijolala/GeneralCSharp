@@ -48,8 +48,8 @@ class Program
 
     public static double[] GetGeoTransform(Tiff image)
     {
-        const int ModelPixelScaleTag = 33550;
-        FieldValue[] pixelScaleValues = image.GetField((TiffTag)ModelPixelScaleTag);
+       // const int ModelPixelScaleTag = 33550;
+        FieldValue[] pixelScaleValues = image.GetField(TiffTag.GEOTIFF_MODELTIEPOINTTAG);
         double[] pixelScales = null;
         if (pixelScaleValues != null && pixelScaleValues.Length > 0)
         {

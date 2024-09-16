@@ -7,11 +7,11 @@ class Program
 {
     static void Main(string[] args)
     {
-        string inputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
+        string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; ;
         string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
 
         // Open the input GeoTIFF
-        using (Tiff inputImage = Tiff.Open(inputFilePath, "r"))
+        using (Tiff inputImage = Tiff.Open(filePath, "r"))
         {
             if (inputImage == null)
             {

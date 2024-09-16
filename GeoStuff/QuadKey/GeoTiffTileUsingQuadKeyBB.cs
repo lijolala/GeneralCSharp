@@ -25,6 +25,15 @@ class Program
         // Open the GeoTIFF file
         using (Tiff image = Tiff.Open(filePath, "r"))
         {
+            if (image.NumberOfDirectories() > zoomLevel)
+            {
+                image.SetDirectory((short)zoomLevel);
+            }
+            else
+            {
+                image.SetDirectory((short)image.NumberOfDirectories())
+                throw new Exception($"Zoom level {zoomLevel} not found in the GeoTIFF.");
+            }
             // Get image information from the GeoTIFF directory
             int imageWidth = image.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
             int imageHeight = image.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
