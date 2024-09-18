@@ -10,7 +10,7 @@ class Program
     static void Main(string[] args)
     {
         string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
-        string quadkey = "2111"; // Replace with your quadkey
+        string quadkey = "120210233222"; // Replace with your quadkey
         string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1"; // Replace with your output folder path
 
         // Decode quadkey to get zoom level and tile indices

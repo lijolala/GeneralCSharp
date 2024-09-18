@@ -11,7 +11,7 @@ class Program
     {
         string filePath =
                    @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; // Replace with your GeoTIFF file path
-        string quadKey = "122002"; // Replace with your QuadKey
+        string quadKey = "120210233222"; // Replace with your QuadKey
         string outputTilePath =
             @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png";
         ExtractAndSaveTile(filePath, quadKey, outputTilePath);
@@ -31,7 +31,6 @@ class Program
             else
             {
                 image.SetDirectory((short)image.NumberOfDirectories());
-                throw new Exception($"Zoom level {zoomLevel} not found in the GeoTIFF.");
             }
             double[] geoTransform = GetGeoTransform(image);
             int minXPixel, minYPixel, maxXPixel, maxYPixel;

@@ -13,7 +13,7 @@ namespace GeoTiffQuadKeyExtractor
         {
             // Example usage: pass the Quadkey and zoom level
             string quadkey = "120"; // Example quadkey
-            string geoTiffFilePath = "path_to_your_geotiff.tif"; // Path to your GeoTIFF file
+            string geoTiffFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif"; ; // Path to your GeoTIFF file
 
             // Step 1: Convert Quadkey to tile coordinates and zoom level
             var (tileX, tileY, zoomLevel) = QuadkeyToTile(quadkey);
@@ -79,7 +79,7 @@ namespace GeoTiffQuadKeyExtractor
             double minLon, double minLat, double maxLon, double maxLat, string sourceEPSG, string targetEPSG)
         {
             var sourceCS = GeographicCoordinateSystem.WGS84;
-            var targetCS = ProjectedCoordinateSystem.WebMercator;
+            var targetCS = ProjectedCoordinateSystem.;
 
             var transformationFactory = new CoordinateTransformationFactory();
             var transform = transformationFactory.CreateFromCoordinateSystems(sourceCS, targetCS);
