@@ -11,7 +11,7 @@ class TiffTileReader
     static void Main(string[] args) {
         string filePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
         string outputFolder = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1";
-        string quadkey = "120210233222";
+        string quadkey = "1202102332";
         int foundZoomLevel = 0;
 
         // Convert the quadkey to tile coordinates

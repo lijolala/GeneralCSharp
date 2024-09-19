@@ -12,7 +12,7 @@ class Program
         string outputTilePath =
             @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png";
         // QuadKey for the tile you want to extract
-        string quadKey = "02301012130";
+        string quadKey = "1202102332";
 
         // Convert the quadKey to a lat/lon bounding box
         BoundingBox boundingBox = QuadKeyToBoundingBox(quadKey);
@@ -59,7 +59,7 @@ class Program
             Bitmap extractedImage = ExtractQuadKeyImage(raster, tileWidth, tileHeight, quadKeyPixelRect, zoomLevel);
 
             // Save the extracted image
-            extractedImage.Save(outputTilePath + $"\\extracted_quadKey_image_zoom_{zoomLevel}.png", ImageFormat.Png);
+            extractedImage.Save(outputTilePath , ImageFormat.Png);
             Console.WriteLine($"Image extracted successfully for zoom level {zoomLevel}.");
         }
     }
