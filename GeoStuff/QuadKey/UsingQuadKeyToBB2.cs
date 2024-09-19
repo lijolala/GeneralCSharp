@@ -5,6 +5,26 @@ using BitMiracle.LibTiff.Classic;
 
 class QuadKeyToGeoTIFF
 {
+    public static void Main(string[] args)
+    {
+        // Example quadkey
+        string quadKey = "1202102332";
+        string tiffFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
+        string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png"; ;
+        var (tileX, tileY, level) = QuadKeyToTileXY(quadKey);
+        var (left, bottom, right, top) = TileXYToBoundingBox(tileX, tileY, level);
+
+        Console.WriteLine($"QuadKey: {quadKey}");
+        Console.WriteLine($"TileX: {tileX}, TileY: {tileY}, Level: {level}");
+        //Console.WriteLine($"Bounding Box: North={north}, South={bottom}, East={east}, West={west}");
+
+        //ReadGeoTiff(tiffFilePath, minLat, minLon, maxLat, maxLon);
+        byte[] buffer = ReadGeoTiff(tiffFilePath, level, left, bottom, right, top, out int boxWidth, out int boxHeight);
+        // Read GeoTIFF file
+        SaveBufferAsPng(buffer, boxWidth, boxHeight, outputFilePath);
+
+    }
+
     // Convert QuadKey to Tile Coordinates
     public static (int tileX, int tileY, int level) QuadKeyToTileXY(string quadKey)
     {
@@ -272,24 +292,6 @@ class QuadKeyToGeoTIFF
         return result;
     }
 
-    public static void Main(string[] args)
-    {
-        // Example quadkey
-        string quadKey = "1202102332";
-        string tiffFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
-        string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png"; ;
-        var (tileX, tileY, level) = QuadKeyToTileXY(quadKey);
-        var (left, bottom, right, top) = TileXYToBoundingBox(tileX, tileY, level);
-
-        Console.WriteLine($"QuadKey: {quadKey}");
-        Console.WriteLine($"TileX: {tileX}, TileY: {tileY}, Level: {level}");
-        //Console.WriteLine($"Bounding Box: North={north}, South={bottom}, East={east}, West={west}");
-
-        //ReadGeoTiff(tiffFilePath, minLat, minLon, maxLat, maxLon);
-        byte[] buffer =  ReadGeoTiff(tiffFilePath,level, left, bottom, right, top, out int boxWidth, out int boxHeight);
-        // Read GeoTIFF file
-        SaveBufferAsPng(buffer, boxWidth, boxHeight, outputFilePath);
-
-    }
+   
    
 }
