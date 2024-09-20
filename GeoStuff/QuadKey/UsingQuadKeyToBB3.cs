@@ -18,7 +18,7 @@ class Program
         string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png"; ;
         var (tileX, tileY, level) = QuadKeyToTileXY(quadKey);
         var (minLon, minLat, maxLon, maxLat) = TileXYToBoundingBox(tileX, tileY, level);
-
+    //    GetCorrectZoomDirectory(geoTiffFilePath, zoomLevel);
         // Open the TIFF file
         using (Tiff tiff = Tiff.Open(tiffFilePath, "r"))
         {
@@ -27,7 +27,9 @@ class Program
                 Console.WriteLine("Could not open file.");
                 return;
             }
-
+            // Loop through all directories in the GeoTIFF
+            short directoryCount = tiff.NumberOfDirectories();
+            tiff.SetDirectory(level <= directoryCount ? level : directoryCount);
             // Get the image width and height
             int imageWidth = tiff.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
             int imageHeight = tiff.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
@@ -56,19 +58,27 @@ class Program
             }
 
             // Allocate buffer for reading the region
-            int[] buffer = new int[boxWidth * boxHeight];
+            byte[] buffer = new byte[boxWidth * boxHeight];
+            int nooftiles = tiff.GetField(TiffTag.TILEBYTECOUNTS).Length;
 
-            // Iterate over the region and read it row by row
-            for (int row = 0; row < boxHeight; row++)
+            //// Iterate over the region and read it row by row
+            //for (int row = 0; row < boxHeight; row++)
+            //{
+            //    int rowIndex = yMin + row;
+            //    byte[] scanline = new byte[boxWidth * 4];  // 4 bytes per pixel (RGBA)
+
+            //    // Read the scanline for the row within the bounding box
+            //    tiff.ReadEncodedStrip(rowIndex, scanline, 0, scanline.Length);
+
+            //    // Copy scanline to the buffer (this is an example, adapt to your needs)
+            //    Buffer.BlockCopy(scanline, xMin * 4, buffer, row * boxWidth * 4, boxWidth * 4);
+            //}
+            for (int i = 0; i < nooftiles; i++)
             {
-                int rowIndex = yMin + row;
-                byte[] scanline = new byte[boxWidth * 4];  // 4 bytes per pixel (RGBA)
-
-                // Read the scanline for the row within the bounding box
-                tiff.ReadEncodedStrip(rowIndex, scanline, 0, scanline.Length);
-
-                // Copy scanline to the buffer (this is an example, adapt to your needs)
-                Buffer.BlockCopy(scanline, xMin * 4, buffer, row * boxWidth * 4, boxWidth * 4);
+                int size = tiff.ReadEncodedTile(i, buffer, 0, boxWidth * boxHeight);
+                float[,] data = new float[boxWidth, boxHeight];
+                Buffer.BlockCopy(buffer, 0, data, 0, size); // Convert byte array to x,y array of floats (height data)
+                // Do whatever you want with the height data (calculate hillshade images etc.)
             }
 
             // Process or save the buffer as needed (you can now work with the pixel data)
@@ -77,10 +87,10 @@ class Program
     }
 
     // Convert QuadKey to Tile Coordinates
-    public static (int tileX, int tileY, int level) QuadKeyToTileXY(string quadKey)
+    public static (int tileX, int tileY, short level) QuadKeyToTileXY(string quadKey)
     {
         int tileX = 0, tileY = 0;
-        int level = quadKey.Length;
+        short level =(short) quadKey.Length;
 
         for (int i = level; i > 0; i--)
         {
