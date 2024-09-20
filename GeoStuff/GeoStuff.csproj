@@ -83,14 +83,16 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AsposeGis\NetvipsSample.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QuadKey\UsingQuadKeyToBB3.cs" />
     <Compile Include="QuadKey\WebMercator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="AsposeGis\" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="files\libvips-42.dll" />
   </ItemGroup>

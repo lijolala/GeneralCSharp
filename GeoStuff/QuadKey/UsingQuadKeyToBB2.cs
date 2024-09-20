@@ -54,20 +54,6 @@ class QuadKeyToGeoTIFF
         }
         return (tileX, tileY, level);
     }
-
-    // Convert Pixel Coordinates to Latitude and Longitude
-    public static (double lat, double lon) PixelXYToLatLong(int pixelX, int pixelY, int level)
-    {
-        double mapSize = 256 << level;
-        double x = (pixelX / mapSize) - 0.5;
-        double y = 0.5 - (pixelY / mapSize);
-
-        double lat = 90 - 360 * Math.Atan(Math.Exp(-y * 2 * Math.PI)) / Math.PI;
-        double lon = 360 * x;
-
-        return (lat, lon);
-    }
-
     // Convert Tile Coordinates to Bounding Box (Lat/Lon)
     public static (double north, double south, double east, double west) TileXYToBoundingBox(int tileX, int tileY, int level)
     {
@@ -84,6 +70,20 @@ class QuadKeyToGeoTIFF
 
         return (lonMin, latMin, lonMax, latMax);
     }
+
+    // Convert Pixel Coordinates to Latitude and Longitude
+    public static (double lat, double lon) PixelXYToLatLong(int pixelX, int pixelY, int level)
+    {
+        double mapSize = 256 << level;
+        double x = (pixelX / mapSize) - 0.5;
+        double y = 0.5 - (pixelY / mapSize);
+
+        double lat = 90 - 360 * Math.Atan(Math.Exp(-y * 2 * Math.PI)) / Math.PI;
+        double lon = 360 * x;
+
+        return (lat, lon);
+    }
+
 
     // Read GeoTIFF Metadata using libtiff
     public static byte[] ReadGeoTiff(string filePath, int zoomLevel, double minLat, double minLon, double maxLat,
@@ -155,42 +155,7 @@ class QuadKeyToGeoTIFF
             int width = pixelXMax - pixelXMin;
             int height = pixelYMax - pixelYMin;
             byte[] buffer = new byte[boxWidth * boxHeight * 4];
-            // For RGBA
-            //tiff.ReadRGBAImage(width, height, raster);
-            // Read tiles that overlap with the bounding box
-            //for (int y = 0; y < imageHeight; y += tileHeight)
-            //{
-            //    for (int x = 0; x < imageWidth; x += tileWidth)
-            //    {
-            //        // Get the tile data
-            //        byte[] tileBuffer = new byte[tileWidth * tileHeight * 4]; // Assuming 4 samples (RGBA)
-            //        tiff.ReadTile(tileBuffer, 0, x, y, 0, 0);
-
-            //        // Determine if this tile intersects with the region of interest
-            //        // Copy relevant pixels to the output buffer
-            //        for (int ty = 0; ty < tileHeight; ty++)
-            //        {
-            //            int destY = y + ty;
-            //            if (destY >= pixelYMin && destY < pixelYMax)
-            //            {
-            //                for (int tx = 0; tx < tileWidth; tx++)
-            //                {
-            //                    int destX = x + tx;
-            //                    if (destX >= pixelXMin && destX < pixelXMax)
-            //                    {
-            //                        int destIndex = ((destY - pixelYMin) * boxWidth + (destX - pixelXMin)) * 4;
-            //                        int srcIndex = (ty * tileWidth + tx) * 4;
-
-            //                        buffer[destIndex] = tileBuffer[srcIndex];
-            //                        buffer[destIndex + 1] = tileBuffer[srcIndex + 1];
-            //                        buffer[destIndex + 2] = tileBuffer[srcIndex + 2];
-            //                        buffer[destIndex + 3] = tileBuffer[srcIndex + 3];
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-
+            
 
             //}
             if (image.IsTiled())
