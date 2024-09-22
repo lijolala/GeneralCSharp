@@ -84,7 +84,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QuadKey\UsingQuadKeyToBB4.cs" />
+    <Compile Include="QuadKey\UsingQuadKeyToBB5.cs" />
     <Compile Include="QuadKey\WebMercator.cs" />
   </ItemGroup>
   <ItemGroup>

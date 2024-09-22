@@ -7,10 +7,10 @@ class Program
     static void Main(string[] args)
     {
         //// Define the bounding box (lat/lon)
-        //double minLon = -120.0; // Min Longitude (left)
-        //double maxLon = -119.0; // Max Longitude (right)
-        //double minLat = 35.0;   // Min Latitude (bottom)
-        //double maxLat = 36.0;   // Max Latitude (top)
+        //double minLon = 13.35; // Min Longitude (left)
+        //double maxLon = 13.71; // Max Longitude (right)
+        //double minLat = 52.69;   // Min Latitude (bottom)
+        //double maxLat = 52.48;   // Max Latitude (top)
 
         // Path to your GeoTIFF file
         string quadKey = "1202102332";
