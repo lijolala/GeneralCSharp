@@ -43,76 +43,40 @@ namespace BitMiracle.LibTiff.Samples
                 int cropHeight = pixelYMax - pixelYMin;
 
                 // Create the output bitmap
-                using (Bitmap bmp = new Bitmap(256, 256, PixelFormat.Format32bppRgb))
+                // Create a bitmap to hold the cropped image
+                using (Bitmap bmp = new Bitmap(cropWidth, cropHeight, PixelFormat.Format32bppRgb))
                 {
-                    BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, 256, 256), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+                    BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, cropWidth, cropHeight),
+                        ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
 
-                    // Get the number of samples per pixel and bits per sample (for 32-bit float, this should be 32)
-                    int samplesPerPixel = tif.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
-                    int bitsPerSample = tif.GetField(TiffTag.BITSPERSAMPLE)[0].ToInt();
-
-                    if (bitsPerSample != 32)
+                    // Read and process the TIFF data row by row (strip-wise or tile-wise depending on the TIFF layout)
+                    for (int row = pixelYMin; row < pixelYMax; row++)
                     {
-                        throw new InvalidOperationException("This code is designed for 32-bit floating point TIFF files.");
-                    }
+                        byte[] scanline = new byte[tif.ScanlineSize()];
+                        tif.ReadScanline(scanline, row);
 
-                    // Calculate scaling factors
-                    float scaleX = (float)cropWidth / 256;
-                    float scaleY = (float)cropHeight / 256;
-
-                    // Loop through the tiles in the TIFF
-                    for (int tileY = pixelYMin / tileHeight; tileY <= pixelYMax / tileHeight; tileY++)
-                    {
-                        for (int tileX = pixelXMin / tileWidth; tileX <= pixelXMax / tileWidth; tileX++)
+                        // Copy the relevant part of the scanline to the output image
+                        for (int col = pixelXMin; col < pixelXMax; col++)
                         {
-                            // Read the tile
-                            byte[] tileBuffer = new byte[tif.TileSize()];
-                            int tileIndex = tif.ComputeTile(tileX * tileWidth, tileY * tileHeight, 0, 0);
-                            if (tif.ReadEncodedTile(tileIndex, tileBuffer, 0, tileBuffer.Length) == -1)
-                                continue;
+                            int destCol = col - pixelXMin;
+                            int offset = destCol * 4; // Assuming 32bpp RGB image (4 bytes per pixel)
+                            int srcOffset = (col - pixelXMin) * 4;
 
-                            // Process the tile pixel by pixel
-                            for (int y = 0; y < tileHeight; y++)
-                            {
-                                for (int x = 0; x < tileWidth; x++)
-                                {
-                                    int srcX = tileX * tileWidth + x;
-                                    int srcY = tileY * tileHeight + y;
-
-                                    if (srcX < pixelXMin || srcX >= pixelXMax || srcY < pixelYMin || srcY >= pixelYMax)
-                                        continue;
-
-                                    int destX = (int)((srcX - pixelXMin) / scaleX);
-                                    int destY = (int)((srcY - pixelYMin) / scaleY);
-
-                                    if (destX < 0 || destX >= 256 || destY < 0 || destY >= 256)
-                                        continue;
-
-                                    // Read the 32-bit float value from the tile buffer
-                                    int offset = (y * tileWidth + x) * 4; // 4 bytes per float
-                                    float value = BitConverter.ToSingle(tileBuffer, offset);
-
-                                    // Normalize the value (this step depends on the data range, here we assume values between 0 and 1)
-                                    byte intensity = (byte)(Clamp(value, 0f, 1f) * 255);
-
-                                    // Set the pixel in the output image (we're using grayscale for simplicity)
-                                    IntPtr destPtr = bmpData.Scan0 + destY * bmpData.Stride + destX * 4;
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr, intensity); // R
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 1, intensity); // G
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 2, intensity); // B
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 3, 255); // A (opaque)
-                                }
-                            }
+                            // Set the pixel color in the destination bitmap
+                            IntPtr destPtr = bmpData.Scan0 + (row - pixelYMin) * bmpData.Stride + destCol * 4;
+                            System.Runtime.InteropServices.Marshal.Copy(scanline, srcOffset, destPtr, 4);
                         }
                     }
-
-                    // Unlock and save the bitmap
                     bmp.UnlockBits(bmpData);
+
+                    // Save the cropped image as a new TIFF or PNG file
                     bmp.Save(outputFilePath, ImageFormat.Png);
-                    Console.WriteLine("Cropped 32-bit floating point GeoTIFF saved successfully.");
+                    Console.WriteLine("Cropped GeoTIFF saved successfully.");
+
                 }
             }
         }
+
         // Implement a custom Clamp function
         public static float Clamp(float value, float min, float max)
         {
