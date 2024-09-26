@@ -19,109 +19,108 @@ namespace BitMiracle.LibTiff.Samples
             // Open the GeoTIFF
             using (Tiff tif = Tiff.Open(tiffFilePath, "r"))
             {
-                // Get image dimensions
-                FieldValue[] value = tif.GetField(TiffTag.IMAGEWIDTH);
-                int width = value[0].ToInt();
-                value = tif.GetField(TiffTag.IMAGELENGTH);
-                int height = value[0].ToInt();
-
-                // Get tile dimensions
+                int width = tif.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
+                int height = tif.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
                 int tileWidth = tif.GetField(TiffTag.TILEWIDTH)[0].ToInt();
                 int tileHeight = tif.GetField(TiffTag.TILELENGTH)[0].ToInt();
 
-                // Geo-transform array (from GeoTIFF metadata)
-                double[] geoTransform = new double[] { -180.00000000000006, 0.00500000000000256, 0, -90.000000000000028, 0, -0.0049999999999990061 };
+                // Geo-transform array (should be read from the TIFF metadata in a real-world scenario)
+                double[] geoTransform = new double[] { -180.0, 0.005, 0, -90.0, 0, -0.005 };
 
-                // Convert bounding box coordinates to pixel coordinates
+                // Calculate pixel coordinates
                 int pixelXMin = (int)((minLon - geoTransform[0]) / geoTransform[1]);
                 int pixelYMin = (int)((geoTransform[3] - maxLat) / geoTransform[5]);
                 int pixelXMax = (int)((maxLon - geoTransform[0]) / geoTransform[1]);
                 int pixelYMax = (int)((geoTransform[3] - minLat) / geoTransform[5]);
 
-                // Clamp pixel coordinates to image dimensions
+                // Clamp coordinates to image bounds
                 pixelXMin = Math.Max(0, pixelXMin);
                 pixelYMin = Math.Max(0, pixelYMin);
                 pixelXMax = Math.Min(width, pixelXMax);
                 pixelYMax = Math.Min(height, pixelYMax);
 
-                // Calculate the size of the cropped region
                 int cropWidth = pixelXMax - pixelXMin;
                 int cropHeight = pixelYMax - pixelYMin;
 
-                // Determine the range of tiles to process
-                int tileXMin = pixelXMin / tileWidth;
-                int tileYMin = pixelYMin / tileHeight;
-                int tileXMax = pixelXMax / tileWidth;
-                int tileYMax = pixelYMax / tileHeight;
-
-                // Create a bitmap for the cropped area (256x256)
+                // Create the output bitmap
                 using (Bitmap bmp = new Bitmap(256, 256, PixelFormat.Format32bppRgb))
                 {
                     BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, 256, 256), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
-                    int bytesPerPixel = 3;  // Assuming 24-bit RGB TIFF
 
-                    // Calculate scaling factors for downscaling the crop area to 256x256
+                    // Get the number of samples per pixel and bits per sample (for 32-bit float, this should be 32)
+                    int samplesPerPixel = tif.GetField(TiffTag.SAMPLESPERPIXEL)[0].ToInt();
+                    int bitsPerSample = tif.GetField(TiffTag.BITSPERSAMPLE)[0].ToInt();
+
+                    if (bitsPerSample != 32)
+                    {
+                        throw new InvalidOperationException("This code is designed for 32-bit floating point TIFF files.");
+                    }
+
+                    // Calculate scaling factors
                     float scaleX = (float)cropWidth / 256;
                     float scaleY = (float)cropHeight / 256;
 
-                    // Loop through the relevant tiles
-                    for (int tileY = tileYMin; tileY <= tileYMax; tileY++)
+                    // Loop through the tiles in the TIFF
+                    for (int tileY = pixelYMin / tileHeight; tileY <= pixelYMax / tileHeight; tileY++)
                     {
-                        for (int tileX = tileXMin; tileX <= tileXMax; tileX++)
+                        for (int tileX = pixelXMin / tileWidth; tileX <= pixelXMax / tileWidth; tileX++)
                         {
-                            // Compute the tile index
-                            int tileIndex = tif.ComputeTile(tileX * tileWidth, tileY * tileHeight, 0, 0);
-
-                            // Read the tile data
+                            // Read the tile
                             byte[] tileBuffer = new byte[tif.TileSize()];
+                            int tileIndex = tif.ComputeTile(tileX * tileWidth, tileY * tileHeight, 0, 0);
                             if (tif.ReadEncodedTile(tileIndex, tileBuffer, 0, tileBuffer.Length) == -1)
-                                continue; // Skip the tile if it can't be read
+                                continue;
 
-                            // Loop through the pixels in the current tile
+                            // Process the tile pixel by pixel
                             for (int y = 0; y < tileHeight; y++)
                             {
                                 for (int x = 0; x < tileWidth; x++)
                                 {
-                                    // Calculate the source pixel position in the full image
                                     int srcX = tileX * tileWidth + x;
                                     int srcY = tileY * tileHeight + y;
 
-                                    // Check if the source pixel is within the bounding box
                                     if (srcX < pixelXMin || srcX >= pixelXMax || srcY < pixelYMin || srcY >= pixelYMax)
-                                        continue; // Skip if out of bounding box
+                                        continue;
 
-                                    // Determine the corresponding pixel in the output 256x256 image
                                     int destX = (int)((srcX - pixelXMin) / scaleX);
                                     int destY = (int)((srcY - pixelYMin) / scaleY);
 
                                     if (destX < 0 || destX >= 256 || destY < 0 || destY >= 256)
-                                        continue; // Skip if out of output image bounds
+                                        continue;
 
-                                    // Get the pixel data from the tile buffer
-                                    int srcOffset = (y * tileWidth + x) * bytesPerPixel;
-                                    byte r = tileBuffer[srcOffset];
-                                    byte g = tileBuffer[srcOffset + 1];
-                                    byte b = tileBuffer[srcOffset + 2];
+                                    // Read the 32-bit float value from the tile buffer
+                                    int offset = (y * tileWidth + x) * 4; // 4 bytes per float
+                                    float value = BitConverter.ToSingle(tileBuffer, offset);
 
-                                    // Write the pixel to the destination bitmap buffer
-                                    int destOffset = (destY * bmpData.Stride) + (destX * bytesPerPixel);
-                                    IntPtr destPtr = bmpData.Scan0 + destOffset;
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr, r);
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 1, g);
-                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 2, b);
+                                    // Normalize the value (this step depends on the data range, here we assume values between 0 and 1)
+                                    byte intensity = (byte)(Clamp(value, 0f, 1f) * 255);
+
+                                    // Set the pixel in the output image (we're using grayscale for simplicity)
+                                    IntPtr destPtr = bmpData.Scan0 + destY * bmpData.Stride + destX * 4;
+                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr, intensity); // R
+                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 1, intensity); // G
+                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 2, intensity); // B
+                                    System.Runtime.InteropServices.Marshal.WriteByte(destPtr + 3, 255); // A (opaque)
                                 }
                             }
                         }
                     }
 
-                    // Unlock the bitmap bits (after all tiles are processed)
+                    // Unlock and save the bitmap
                     bmp.UnlockBits(bmpData);
-
-                    // Save the final output image
                     bmp.Save(outputFilePath, ImageFormat.Png);
-                    Console.WriteLine("Cropped GeoTIFF saved successfully!");
+                    Console.WriteLine("Cropped 32-bit floating point GeoTIFF saved successfully.");
                 }
             }
+        }
+        // Implement a custom Clamp function
+        public static float Clamp(float value, float min, float max)
+        {
+            if (value < min)
+                return min;
+            if (value > max)
+                return max;
+            return value;
         }
 
         public static (int tileX, int tileY, short level) QuadKeyToTileXY(string quadKey)
@@ -153,7 +152,7 @@ namespace BitMiracle.LibTiff.Samples
             return (tileX, tileY, level);
         }
 
-        public static (double lonMin, double latMin, double lonMax, double latMax) TileXYToBoundingBox(int tileX, int tileY, int level)
+        public static (double north, double south, double east, double west) TileXYToBoundingBox(int tileX, int tileY, int level)
         {
             double n = Math.Pow(2.0, level);
 
