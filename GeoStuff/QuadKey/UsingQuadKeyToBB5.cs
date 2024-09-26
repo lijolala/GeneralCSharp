@@ -4,132 +4,121 @@ using System.Drawing.Imaging;
 
 using BitMiracle.LibTiff.Classic;
 
-namespace BitMiracle.LibTiff.Samples
+public class GeoTiffTiledCropper
 {
-    public static class GeoTiffExtractor
+    public static void CropTiledGeoTiff(string inputFilePath, string outputFilePath, double minLon, double minLat, double maxLon, double maxLat)
     {
-        public static void Main()
+        // Open the TIFF file
+        using (Tiff tif = Tiff.Open(inputFilePath, "r"))
         {
-            string quadKey = "1202102332";
-            string tiffFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
-            string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png";
-            var (QTileX, QTileY, level) = QuadKeyToTileXY(quadKey);
-            var (minLon, minLat, maxLon, maxLat) = TileXYToBoundingBox(QTileX, QTileY, level);
-
-            // Open the GeoTIFF
-            using (Tiff tif = Tiff.Open(tiffFilePath, "r"))
+            if (tif == null)
             {
-                int width = tif.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
-                int height = tif.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
-                int tileWidth = tif.GetField(TiffTag.TILEWIDTH)[0].ToInt();
-                int tileHeight = tif.GetField(TiffTag.TILELENGTH)[0].ToInt();
+                Console.WriteLine("Could not open GeoTIFF file.");
+                return;
+            }
 
-                // Geo-transform array (should be read from the TIFF metadata in a real-world scenario)
-                double[] geoTransform = new double[] { -180.0, 0.005, 0, -90.0, 0, -0.005 };
+            // Get image dimensions
+            int width = tif.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
+            int height = tif.GetField(TiffTag.IMAGELENGTH)[0].ToInt();
 
-                // Calculate pixel coordinates
-                int pixelXMin = (int)((minLon - geoTransform[0]) / geoTransform[1]);
-                int pixelYMin = (int)((geoTransform[3] - maxLat) / geoTransform[5]);
-                int pixelXMax = (int)((maxLon - geoTransform[0]) / geoTransform[1]);
-                int pixelYMax = (int)((geoTransform[3] - minLat) / geoTransform[5]);
+            // Get tile dimensions
+            int tileWidth = tif.GetField(TiffTag.TILEWIDTH)[0].ToInt();
+            int tileHeight = tif.GetField(TiffTag.TILELENGTH)[0].ToInt();
 
-                // Clamp coordinates to image bounds
-                pixelXMin = Math.Max(0, pixelXMin);
-                pixelYMin = Math.Max(0, pixelYMin);
-                pixelXMax = Math.Min(width, pixelXMax);
-                pixelYMax = Math.Min(height, pixelYMax);
+            // Get geo-transform (affine transformation matrix)
+            double[] geoTransform = new double[] { -180.0, 0.01, 0, -90.0, 0, -0.01 }; // Example values, you should extract actual values from the file
 
-                int cropWidth = pixelXMax - pixelXMin;
-                int cropHeight = pixelYMax - pixelYMin;
+            // Convert bounding box from lat/lon to pixel coordinates
+            int pixelXMin = (int)((minLon - geoTransform[0]) / geoTransform[1]);
+            int pixelYMin = (int)((geoTransform[3] - maxLat) / -geoTransform[5]);
+            int pixelXMax = (int)((maxLon - geoTransform[0]) / geoTransform[1]);
+            int pixelYMax = (int)((geoTransform[3] - minLat) / -geoTransform[5]);
 
-                // Create the output bitmap
-                // Create a bitmap to hold the cropped image
-                using (Bitmap bmp = new Bitmap(cropWidth, cropHeight, PixelFormat.Format32bppRgb))
+            // Clamp coordinates to the image bounds
+            pixelXMin = Math.Max(0, pixelXMin);
+            pixelYMin = Math.Max(0, pixelYMin);
+            pixelXMax = Math.Min(width, pixelXMax);
+            pixelYMax = Math.Min(height, pixelYMax);
+
+            int cropWidth = pixelXMax - pixelXMin;
+            int cropHeight = pixelYMax - pixelYMin;
+
+            // Create a bitmap to hold the cropped image
+            using (Bitmap bmp = new Bitmap(cropWidth, cropHeight, PixelFormat.Format32bppRgb))
+            {
+                BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, cropWidth, cropHeight), ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+
+                // Calculate how many tiles we need to process based on bounding box
+                int startTileX = pixelXMin / tileWidth;
+                int endTileX = pixelXMax / tileWidth;
+                int startTileY = pixelYMin / tileHeight;
+                int endTileY = pixelYMax / tileHeight;
+
+                // Iterate through the tiles that overlap the bounding box
+                for (int tileY = startTileY; tileY <= endTileY; tileY++)
                 {
-                    BitmapData bmpData = bmp.LockBits(new Rectangle(0, 0, cropWidth, cropHeight),
-                        ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
-
-                    // Read and process the TIFF data row by row (strip-wise or tile-wise depending on the TIFF layout)
-                    for (int row = pixelYMin; row < pixelYMax; row++)
+                    for (int tileX = startTileX; tileX <= endTileX; tileX++)
                     {
-                        byte[] scanline = new byte[tif.ScanlineSize()];
-                        tif.ReadScanline(scanline, row);
+                        // Calculate the tile index and read the tile
+                        byte[] tileBuffer = new byte[tif.TileSize()];
+                        int tileIndex = tif.ComputeTile(tileX * tileWidth, tileY * tileHeight, 0, 0);
+                        if (tif.ReadEncodedTile(tileIndex, tileBuffer, 0, tileBuffer.Length) == -1)
+                            continue;
 
-                        // Copy the relevant part of the scanline to the output image
-                        for (int col = pixelXMin; col < pixelXMax; col++)
+                        // Calculate the pixel range covered by this tile
+                        int tilePixelXMin = tileX * tileWidth;
+                        int tilePixelYMin = tileY * tileHeight;
+                        int tilePixelXMax = tilePixelXMin + tileWidth;
+                        int tilePixelYMax = tilePixelYMin + tileHeight;
+
+                        // Determine the overlapping region between the tile and the crop box
+                        int overlapXMin = Math.Max(tilePixelXMin, pixelXMin);
+                        int overlapYMin = Math.Max(tilePixelYMin, pixelYMin);
+                        int overlapXMax = Math.Min(tilePixelXMax, pixelXMax);
+                        int overlapYMax = Math.Min(tilePixelYMax, pixelYMax);
+
+                        // Copy the overlapping region from the tile buffer to the output bitmap
+                        for (int y = overlapYMin; y < overlapYMax; y++)
                         {
-                            int destCol = col - pixelXMin;
-                            int offset = destCol * 4; // Assuming 32bpp RGB image (4 bytes per pixel)
-                            int srcOffset = (col - pixelXMin) * 4;
+                            for (int x = overlapXMin; x < overlapXMax; x++)
+                            {
+                                int srcX = x - tilePixelXMin;
+                                int srcY = y - tilePixelYMin;
+                                int destX = x - pixelXMin;
+                                int destY = y - pixelYMin;
 
-                            // Set the pixel color in the destination bitmap
-                            IntPtr destPtr = bmpData.Scan0 + (row - pixelYMin) * bmpData.Stride + destCol * 4;
-                            System.Runtime.InteropServices.Marshal.Copy(scanline, srcOffset, destPtr, 4);
+                                // Read the pixel value from the tile buffer
+                                int srcOffset = (srcY * tileWidth + srcX) * 4;  // 4 bytes per pixel for 32bpp
+                                int destOffset = (destY * bmpData.Stride) + destX * 4;
+
+                                IntPtr destPtr = bmpData.Scan0 + destOffset;
+                                System.Runtime.InteropServices.Marshal.Copy(tileBuffer, srcOffset, destPtr, 4);  // Copy 4 bytes (RGBA)
+                            }
                         }
                     }
-                    bmp.UnlockBits(bmpData);
-
-                    // Save the cropped image as a new TIFF or PNG file
-                    bmp.Save(outputFilePath, ImageFormat.Png);
-                    Console.WriteLine("Cropped GeoTIFF saved successfully.");
-
                 }
+
+                bmp.UnlockBits(bmpData);
+
+                // Save the cropped image as a new TIFF or PNG file
+                bmp.Save(outputFilePath, ImageFormat.Png);
+                Console.WriteLine("Cropped GeoTIFF saved successfully.");
             }
         }
+    }
 
-        // Implement a custom Clamp function
-        public static float Clamp(float value, float min, float max)
-        {
-            if (value < min)
-                return min;
-            if (value > max)
-                return max;
-            return value;
-        }
+    public static void Main()
+    {
+        string inputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
+        string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png";
 
-        public static (int tileX, int tileY, short level) QuadKeyToTileXY(string quadKey)
-        {
-            int tileX = 0, tileY = 0;
-            short level = (short)quadKey.Length;
+        // Define the bounding box (longitude and latitude)
+        double minLon = -123.5;
+        double minLat = 37.5;
+        double maxLon = -122.5;
+        double maxLat = 38.5;
 
-            for (int i = level; i > 0; i--)
-            {
-                int mask = 1 << (i - 1);
-                switch (quadKey[level - i])
-                {
-                    case '0':
-                        break;
-                    case '1':
-                        tileX |= mask;
-                        break;
-                    case '2':
-                        tileY |= mask;
-                        break;
-                    case '3':
-                        tileX |= mask;
-                        tileY |= mask;
-                        break;
-                    default:
-                        throw new ArgumentException("Invalid QuadKey digit.");
-                }
-            }
-            return (tileX, tileY, level);
-        }
-
-        public static (double north, double south, double east, double west) TileXYToBoundingBox(int tileX, int tileY, int level)
-        {
-            double n = Math.Pow(2.0, level);
-
-            double lonMin = tileX / n * 360.0 - 180.0;
-            double lonMax = (tileX + 1) / n * 360.0 - 180.0;
-
-            double latMinRad = Math.Atan(Math.Sinh(Math.PI * (1 - 2 * tileY / n)));
-            double latMaxRad = Math.Atan(Math.Sinh(Math.PI * (1 - 2 * (tileY + 1) / n)));
-
-            double latMin = latMinRad * (180.0 / Math.PI);
-            double latMax = latMaxRad * (180.0 / Math.PI);
-
-            return (lonMin, latMin, lonMax, latMax);
-        }
+        // Crop the GeoTIFF
+        CropTiledGeoTiff(inputFilePath, outputFilePath, minLon, minLat, maxLon, maxLat);
     }
 }
