@@ -30,6 +30,7 @@ class Program
             // Loop through all directories in the GeoTIFF
             short directoryCount = tiff.NumberOfDirectories();
             tiff.SetDirectory(level <= directoryCount ? level : directoryCount);
+
             // Get the image width and height
             int imageWidth = tiff.GetField(TiffTag.IMAGEWIDTH)[0].ToInt();
             int imageHeight = tiff.GetField(TiffTag.IMAGELENGTH)[0].ToInt();

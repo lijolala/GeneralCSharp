@@ -17,7 +17,7 @@ class Program
         var (minLon, minLat, maxLon, maxLat) = TileXYToBoundingBox(tileX, tileY, level);
 
         // Step 3: Extract the part of the image using the bounding box
-        ExtractGeoTiffTile(tiffFilePath, minLat, minLon, maxLat, maxLon);
+      //  ExtractGeoTiffTile(tiffFilePath, minLat, minLon, maxLat, maxLon);
 
         using (TiffImage tiffImage = (TiffImage)Image.Load(tiffFilePath))
         {
@@ -42,14 +42,16 @@ class Program
 
             Aspose.Imaging.Rectangle boundingBox = new Aspose.Imaging.Rectangle(tileMinX, tileMinY, tileWidth, tileHeight);
 
-            foreach (TiffFrame frame in tiffImage.Frames)
-            {
-                // Crop the current frame using the bounding box
-                frame.Crop(boundingBox);
-            }
+            //foreach (TiffFrame frame in tiffImage.Frames)
+            //{
+            //    // Crop the current frame using the bounding box
+            //    frame.Crop(boundingBox);
+            //}
 
             // Step 5: Save the cropped image
-            tiffImage.Save(outputFilePath, new TiffOptions(TiffExpectedFormat.TiffLzwRgb));
+            TiffFrame frame = tiffImage.Frames[7];
+            frame.Crop(boundingBox);
+            frame.Save(outputFilePath, new TiffOptions(TiffExpectedFormat.TiffLzwRgb));
 
             Console.WriteLine("Cropped image saved successfully.");
         }
@@ -70,7 +72,7 @@ class Program
             // Get image dimensions
             int imageWidth = image.Width;
             int imageHeight = image.Height;
-
+            TiffFrame activeFrame = image.ActiveFrame;
             // Assuming the GeoTIFF spans the full extent of the world (-180 to 180 longitude, -90 to 90 latitude)
             double worldMinLon = -180.0;
             double worldMaxLon = 180.0;
@@ -85,19 +87,19 @@ class Program
 
             // Define the rectangle area to crop
             var croppedRect = new Rectangle(minXPixel, minYPixel, Math.Abs(maxXPixel - minXPixel), Math.Abs(maxYPixel - minYPixel));
-            image.Crop(croppedRect) ;
-           image.Save(outputFilePath, new PngOptions());
-                //if (croppedImage != null)
-                //{
-                //    string outputPath = "extracted-tile.png";  // Save the cropped tile
-                //    croppedImage.Save(outputPath, new PngOptions());
-                //    Console.WriteLine($"Tile extracted and saved as {outputPath}");
-                //}
-                //else
-                //{
-                //    Console.WriteLine("Failed to crop the image.");
-                //}
-           
+            activeFrame.Crop(croppedRect);
+            image.Save(outputFilePath, new PngOptions());
+            //if (croppedImage != null)
+            //{
+            //    string outputPath = "extracted-tile.png";  // Save the cropped tile
+            //    croppedImage.Save(outputPath, new PngOptions());
+            //    Console.WriteLine($"Tile extracted and saved as {outputPath}");
+            //}
+            //else
+            //{
+            //    Console.WriteLine("Failed to crop the image.");
+            //}
+
         }
     }
 
