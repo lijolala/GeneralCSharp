@@ -25,8 +25,9 @@ public class GeoTiffTiledCropper
             int tileWidth = tif.GetField(TiffTag.TILEWIDTH)[0].ToInt();
             int tileHeight = tif.GetField(TiffTag.TILELENGTH)[0].ToInt();
 
+         
             // Get geo-transform (affine transformation matrix)
-            double[] geoTransform = new double[] { -180.0, 0.01, 0, -90.0, 0, -0.01 }; // Example values, you should extract actual values from the file
+            double[] geoTransform = RasterHelper.GetGeoTransform(tif); // Example values, you should extract actual values from the file
 
             // Convert bounding box from lat/lon to pixel coordinates
             int pixelXMin = (int)((minLon - geoTransform[0]) / geoTransform[1]);
@@ -34,14 +35,14 @@ public class GeoTiffTiledCropper
             int pixelXMax = (int)((maxLon - geoTransform[0]) / geoTransform[1]);
             int pixelYMax = (int)((geoTransform[3] - minLat) / -geoTransform[5]);
 
-            // Clamp coordinates to the image bounds
-            pixelXMin = Math.Max(0, pixelXMin);
-            pixelYMin = Math.Max(0, pixelYMin);
-            pixelXMax = Math.Min(width, pixelXMax);
-            pixelYMax = Math.Min(height, pixelYMax);
+            //// Clamp coordinates to the image bounds
+            //pixelXMin = Math.Max(0, pixelXMin);
+            //pixelYMin = Math.Max(0, pixelYMin);
+            //pixelXMax = Math.Min(width, pixelXMax);
+            //pixelYMax = Math.Min(height, pixelYMax);
 
-            int cropWidth = pixelXMax - pixelXMin;
-            int cropHeight = pixelYMax - pixelYMin;
+            int cropWidth = Math.Abs(pixelXMax - pixelXMin);
+            int cropHeight = Math.Abs(pixelYMax - pixelYMin);
 
             // Create a bitmap to hold the cropped image
             using (Bitmap bmp = new Bitmap(cropWidth, cropHeight, PixelFormat.Format32bppRgb))
@@ -109,16 +110,22 @@ public class GeoTiffTiledCropper
 
     public static void Main()
     {
+        // Path to your GeoTIFF file
+        string quadKey = "1202102332";
         string inputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\TiffDump\war_2023-08-19.tif";
         string outputFilePath = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_output.png";
+        var (tileX, tileY, level) = RasterHelper.QuadKeyToTileXY(quadKey);
+        var (minLon, minLat, maxLon, maxLat) = RasterHelper.TileXYToBoundingBox(tileX, tileY, level);
 
         // Define the bounding box (longitude and latitude)
-        double minLon = -123.5;
-        double minLat = 37.5;
-        double maxLon = -122.5;
-        double maxLat = 38.5;
+        //double minLon = -123.5;
+        //double minLat = 37.5;
+        //double maxLon = -122.5;
+        //double maxLat = 38.5;
 
         // Crop the GeoTIFF
         CropTiledGeoTiff(inputFilePath, outputFilePath, minLon, minLat, maxLon, maxLat);
     }
+
+   
 }
