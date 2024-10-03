@@ -1,4 +1,6 @@
 ﻿using BitMiracle.LibTiff.Classic;
+using NetVips;
+
 using System;
 
 public class RasterHelper
@@ -61,7 +63,13 @@ public class RasterHelper
 
         return ((int)Math.Round(pixelX), (int)Math.Round(pixelY));
     }
-
+    public static(int column, int row) MapToPixel(double x, double y, double longitude, double latitude, 
+        double pixelWidth, double pixelHeight)
+    {
+        int column = (int)Math.Round((x - longitude - pixelWidth / 2) / pixelWidth);
+        int row = (int)Math.Round((-y + latitude - pixelHeight / 2) / pixelHeight);
+        return (column, row);
+    }
     static double[] ByteArrayToDoubleArray(byte[] byteArray)
     {
         int doubleSize = sizeof(double);
@@ -101,6 +109,19 @@ public class RasterHelper
         return geoTransform;
     }
 
+    public static double[] GetGeoTransformFromPath(string tiffPath)
+    {
+        using (Tiff tif = Tiff.Open(tiffPath, "r"))
+        {
+            if (tif == null)
+            {
+                Console.WriteLine("Could not open GeoTIFF file.");
+                return null;
+            }
+            return GetGeoTransform(tif);
+        }
+    }
+
     public static double[] GetModelPixelScales(Tiff image)
     {
         FieldValue[] pixelScaleValues = image.GetField((TiffTag)ModelPixelScaleTag);
@@ -123,4 +144,43 @@ public class RasterHelper
         return ByteArrayToDoubleArray(tiePointsArray);
     }
 
+    // Convert Pixel Coordinates to Latitude and Longitude
+    public static (double lat, double lon) PixelXYToLatLong(int pixelX, int pixelY, int level)
+    {
+        double mapSize = 256 << level;
+        double x = (pixelX / mapSize) - 0.5;
+        double y = 0.5 - (pixelY / mapSize);
+
+        double lat = 90 - 360 * Math.Atan(Math.Exp(-y * 2 * Math.PI)) / Math.PI;
+        double lon = 360 * x;
+
+        return (lat, lon);
+    }
+
+    static Tuple<double, double> ConvertGeoToPixel(double lat, double lon, double mapWidth, double mapHeight, double mapLonLeft, double mapLonDelta, double mapLatBottomDegree)
+    {
+        // Convert longitude to x coordinate
+        double x = (lon - mapLonLeft) * (mapWidth / mapLonDelta);
+
+        // Convert latitude to y coordinate
+        lat = lat * Math.PI / 180;
+        double worldMapWidth = ((mapWidth / mapLonDelta) * 360) / (2 * Math.PI);
+        double mapOffsetY = (worldMapWidth / 2 * Math.Log((1 + Math.Sin(mapLatBottomDegree)) / (1 - Math.Sin(mapLatBottomDegree))));
+        double y = mapHeight - ((worldMapWidth / 2 * Math.Log((1 + Math.Sin(lat)) / (1 - Math.Sin(lat)))) - mapOffsetY);
+
+        return Tuple.Create(x, y);
+    }
+
+    static void ConvertGeoToPixls1(double lon, double lat, double mapHeight, double mapWidth) {
+
+        var PI = Math.PI;
+        var x = (lon + 180) * (mapWidth / 360);
+        // convert from degrees to radians
+        var latRad = lat * PI / 180;
+        // get y value
+        var mercN = Math.Log(Math.Tan(PI / 4) + (latRad / 2));
+        var y = (mapHeight / 2) - (mapWidth * mercN / (2 * PI));
+
+
+    }
 }
