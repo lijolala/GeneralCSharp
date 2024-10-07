@@ -314,6 +314,52 @@ public class RasterHelper
             return radians * (180.0 / Math.PI);
         }
     }
+
+
+    public static (int pixelX, int pixelY) LatLonToPixel2(double lat, double lon, double zoom, int tileSize)
+    {
+        // World map dimensions at the given zoom level
+        double worldSize = tileSize * Math.Pow(2, zoom);
+
+        // Convert longitude to X pixel coordinate
+        double x = (lon + 180.0) / 360.0 * worldSize;
+
+        // Convert latitude to Y pixel coordinate (Mercator projection)
+        double sinLat = Math.Sin(lat * Math.PI / 180.0);
+        double y = (0.5 - (Math.Log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI))) * worldSize;
+
+        // Return pixel coordinates as an array
+        return ((int)x, (int)y);
+    }
+
+    public static (int x, int y) ConvertToPixel(double longitude, double latitude, int mapWidth, int mapHeight)
+    {
+        // Convert longitude to x-coordinate
+        double x = ((longitude + 180) / 360) * mapWidth;
+
+        // Convert latitude to y-coordinate
+        double y = ((90 - latitude) / 180) * mapHeight;
+
+        return ((int)x, (int)y);
+    }
+
+    //////////////////////////////
+    /// // Converts latitude to pixel Y coordinate
+    static int LatToPixelY(double lat, int zoomLevel)
+    {
+        double sinLatitude = Math.Sin(lat * Math.PI / 180);
+        int pixelY = (int)((0.5 - Math.Log((1 + sinLatitude) / (1 - sinLatitude)) / (4 * Math.PI)) * (256 << zoomLevel));
+        return pixelY;
+    }
+
+    // Converts longitude to pixel X coordinate
+    static int LonToPixelX(double lon, int zoomLevel)
+    {
+        int pixelX = (int)((lon + 180.0) / 360.0 * (256 << zoomLevel));
+        return pixelX;
+    }
+
+
 }
 
 
@@ -354,4 +400,5 @@ public class GeoToPixelConverter
 
         return ((int)pixelX, (int)pixelY);
     }
+
 }

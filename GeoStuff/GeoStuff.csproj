@@ -69,7 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="QuadKey\GeoToPixel.cs" />
+    <Compile Include="QuadKey\GeoToPixel2.cs" />
     <Compile Include="QuadKey\RasterHelper.cs" />
     <Compile Include="QuadKey\WebMercator.cs" />
   </ItemGroup>
