@@ -7,8 +7,7 @@ class Program
 {
     static void Main()
     {
-        int mapWidth = 10095;
-        int mapHeight = 5047;
+       
 
         string quadKey = "2103033";
         var (tileX, tileY, level) = RasterHelper.QuadKeyToTileXY(quadKey);
@@ -23,7 +22,7 @@ class Program
 
         //var (x, y) = RasterHelper.LatLonToOffsets(result[0], result[1], mapWidth, mapHeight);
 
-        string fileName = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpFull\WarImage.png";
+            string fileName = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpFull\WarImage.png";
         var gpConverter = new GeoToPixelConverter(maxLat, minLat, maxLon, minLon, mapWidth, mapHeight);
         var (x, y) = RasterHelper.ConvertToPixel(minLon, maxLat, level, 256);
 
@@ -38,7 +37,7 @@ class Program
 
                 // Draw the desired area of the original into the graphics object
                 g.DrawImage(image, new Rectangle(0,0, 256, 256), new Rectangle(x, y, 256, 256), GraphicsUnit.Pixel);
-                fileName = @"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpFull\WarImageCrop.png";
+                fileName = $@"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpFull\{quadKey}.png";
                 // Save the result
                 cropped.Save(fileName);
             }
