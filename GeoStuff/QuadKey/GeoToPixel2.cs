@@ -8,7 +8,7 @@ public class Program
     public static void Main()
     {
         // Input QuadKey (for example, a tile at zoom level 4)
-        string quadKey = "1233";
+        string quadKey = "03";
 
         // Load the source map image (this may represent part of the world map at the given zoom level)
         Bitmap sourceImage = new Bitmap(@"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDumpFull\WarImage.png");
@@ -30,11 +30,14 @@ public class Program
         double scaleX = (double)sourceImageWidth / fullMapWidth;
         double scaleY = (double)sourceImageHeight / fullMapHeight;
 
+        //double scaleX = 0.005000000000002559689;
+        //double scaleY = -0.004999999999999006108;
+
         // Scaled pixel coordinates
         int tilePixelX = (int)(tileX * TileSize * scaleX);
-        int tilePixelY = (int)(tileY * TileSize * scaleY);
-        int scaledTileSizeX = (int)(TileSize * scaleX);
-        int scaledTileSizeY = (int)(TileSize * scaleY);
+            int tilePixelY = (int)(tileY * TileSize * scaleY);
+            int scaledTileSizeX = (int)(TileSize * scaleX);
+            int scaledTileSizeY = (int)(TileSize * scaleY);
 
         // Step 4: Ensure the tile is within the source image bounds
         if (tilePixelX + scaledTileSizeX > sourceImage.Width || tilePixelY + scaledTileSizeY > sourceImage.Height)
@@ -55,7 +58,7 @@ public class Program
 
         // Step 7: Resize the cropped tile to 256x256 pixels
         Bitmap resizedTileImage = new Bitmap(tileImage, new Size(TileSize, TileSize));
-        resizedTileImage.Save($"tile_{quadKey}.png");
+        resizedTileImage.Save($@"D:\Everbridge\Story\VCC-6608-IHS Markit\ImageDump1\tile_{quadKey}.png");
 
         Console.WriteLine("Tile saved successfully.");
     }
