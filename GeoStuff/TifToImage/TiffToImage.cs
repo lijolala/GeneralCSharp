@@ -16,6 +16,8 @@ class Program
 
         if (image.Width > 0 && image.Height > 0)
         {
+            double scaleFactor = 0.5;  // Change this to any desired scale factor
+            image = image.Resize(scaleFactor);
             // If image has more than 3 bands, extract RGB channels
             if (image.Bands > 3)
             {

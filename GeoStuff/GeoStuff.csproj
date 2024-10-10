@@ -71,7 +71,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QuadKey\RasterHelper.cs" />
     <Compile Include="QuadKey\WebMercator.cs" />
-    <Compile Include="TifToImage\TiffToImage.cs" />
+    <Compile Include="TifToImage\TiffToImage2.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
