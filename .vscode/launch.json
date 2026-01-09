@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": ".NET Launch (USBFixTool)",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/USBFixTool/bin/Debug/net10.0-windows/USBFixTool.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/USBFixTool",
+            "console": "externalTerminal",
+            "stopAtEntry": false
+        }
+    ]
+}
